@@ -1,0 +1,14 @@
+{
+  "name": "pos-print-agent",
+  "version": "1.0.0",
+  "description": "Runs on each branch Windows 10 PC. Receives ESC/POS payload from POS UI and sends it to the local thermal printer.",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "node-thermal-printer": "^4.4.4"
+  }
+}

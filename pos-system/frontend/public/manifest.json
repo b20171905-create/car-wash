@@ -1,0 +1,19 @@
+{
+  "short_name": "Tiger Car Wash",
+  "name": "Tiger Car Wash POS System",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+
+  
+  "start_url": ".",
+  "background_color": "#f4f7f8",
+  "theme_color": "#f4f7f8",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}

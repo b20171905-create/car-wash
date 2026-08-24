@@ -1,0 +1,455 @@
+import React, { useEffect, useState } from 'react';
+import { api } from '../api';
+
+// ── Branches Tab ──────────────────────────────────────────────
+function BranchesTab() {
+  const [branches, setBranches] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', address: '', phone: '' });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => { api.getBranches().then(setBranches).catch(() => {}); }, []);
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    try {
+      const b = await api.createBranch(form);
+      setBranches((prev) => [...prev, b]);
+      setForm({ name: '', address: '', phone: '' });
+      setShowForm(false);
+      setMsg({ type: 'success', text: `Branch "${b.name}" created!` });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(branch) {
+    if (!confirm(`Remove branch "${branch.name}"? Only empty branches can be removed.`)) return;
+    try {
+      await api.deleteBranch(branch.id);
+      setBranches((prev) => prev.filter((item) => item.id !== branch.id));
+      setMsg({ type: 'success', text: `Branch "${branch.name}" removed.` });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    }
+  }
+
+  return (
+    <div>
+      <div className="section-actions">
+        <div>
+          <div className="section-title">Branches ({branches.length})</div>
+          <p style={{ margin: 0 }}>Manage all car wash locations</p>
+        </div>
+        <button id="add-branch-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
+          {showForm ? '✕ Cancel' : '+ Add Branch'}
+        </button>
+      </div>
+
+      {msg && <div className={`status-msg ${msg.type}`} style={{ marginBottom: 14 }}>{msg.text}</div>}
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--border-active)' }}>
+          <h4 style={{ marginBottom: 14 }}>New Branch</h4>
+          <form onSubmit={handleCreate}>
+            <div className="form-group">
+              <label className="form-label">Branch Name *</label>
+              <input className="form-input" placeholder="e.g. Gulshan Branch" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Address</label>
+                <input className="form-input" placeholder="Street, City" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Phone</label>
+                <input className="form-input" placeholder="+92 300 1234567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+              <button id="save-branch-btn" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                {saving ? <span className="spinner" /> : '✓ Create Branch'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="card">
+        {branches.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">🏢</div><div className="empty-title">No branches yet</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Branch Name</th><th>Address</th><th>Phone</th><th>Created</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {branches.map((b) => (
+                  <tr key={b.id}>
+                    <td><strong>{b.name}</strong></td>
+                    <td style={{ color: 'var(--text-muted)' }}>{b.address || '—'}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{b.phone || '—'}</td>
+                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(b.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(b)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Services Tab ─────────────────────────────────────────────
+function ServicesTab() {
+  const [services, setServices] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({ name: '', description: '', price: '', active: true });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    api.getServices().then(setServices).catch((err) => setMsg({ type: 'error', text: err.message }));
+  }, []);
+
+  function resetForm() {
+    setForm({ name: '', description: '', price: '', active: true });
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function editService(service) {
+    setForm({ ...service, active: Boolean(service.active) });
+    setEditingId(service.id);
+    setShowForm(true);
+    setMsg(null);
+  }
+
+  async function saveService(e) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    try {
+      const wasEditing = Boolean(editingId);
+      const saved = editingId
+        ? await api.updateService(editingId, form)
+        : await api.createService(form);
+      setServices((prev) => editingId ? prev.map((s) => s.id === saved.id ? saved : s) : [...prev, saved]);
+      resetForm();
+      setMsg({ type: 'success', text: `Service ${wasEditing ? 'updated' : 'created'} successfully.` });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleService(service) {
+    try {
+      const updated = await api.updateService(service.id, { ...service, active: !service.active });
+      setServices((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+    } catch (err) { setMsg({ type: 'error', text: err.message }); }
+  }
+
+  async function deleteService(service) {
+    if (!confirm(`Delete service "${service.name}"?`)) return;
+    try {
+      await api.deleteService(service.id);
+      setServices((prev) => prev.filter((s) => s.id !== service.id));
+      setMsg({ type: 'success', text: 'Service deleted successfully.' });
+    } catch (err) { setMsg({ type: 'error', text: err.message }); }
+  }
+
+  return (
+    <div>
+      <div className="section-actions">
+        <div>
+          <div className="section-title">Services ({services.length})</div>
+          <p style={{ margin: 0 }}>Manage wash packages, prices and availability</p>
+        </div>
+        <button id="add-service-btn" className="btn btn-primary btn-sm" onClick={() => { resetForm(); setShowForm(true); }}>
+          + Add Service
+        </button>
+      </div>
+
+      {msg && <div className={`status-msg ${msg.type}`} style={{ marginBottom: 16 }}>{msg.text}</div>}
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--border-active)' }}>
+          <h4 style={{ marginBottom: 14 }}>{editingId ? 'Edit Service' : 'New Service'}</h4>
+          <form onSubmit={saveService}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Service Name *</label>
+                <input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Price (Rs.) *</label>
+                <input className="form-input" type="number" min="0" step="0.01" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <input className="form-input" value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <label className="form-label" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+              <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} /> Active
+            </label>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={resetForm}>Cancel</button>
+              <button id="save-service-btn" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                {saving ? <span className="spinner" /> : '✓ Save Service'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="card">
+        {services.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">🔧</div><div className="empty-title">No services yet</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Service</th><th>Description</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {services.map((s) => (
+                  <tr key={s.id}>
+                    <td><strong>{s.name}</strong></td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{s.description || '—'}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--teal-light)' }}>Rs. {s.price}</td>
+                    <td>
+                      <span className={`badge ${s.active ? 'badge-green' : 'badge-gray'}`}>
+                        {s.active ? '● Active' : '○ Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => editService(s)}>Edit</button>{' '}
+                      <button className="btn btn-secondary btn-sm" onClick={() => toggleService(s)}>{s.active ? 'Deactivate' : 'Activate'}</button>{' '}
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteService(s)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Users Tab ────────────────────────────────────────────────
+function UsersTab() {
+  const [users, setUsers] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', password: '', profile_photo: '', role: 'cashier', branch_id: '' });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    api.getUsers().then(setUsers).catch(() => {});
+    api.getBranches().then(setBranches).catch(() => {});
+  }, []);
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg(null);
+    try {
+      const created = await api.createUser(form);
+      setUsers((prev) => [...prev, created]);
+      setForm({ name: '', email: '', password: '', profile_photo: '', role: 'cashier', branch_id: '' });
+      setShowForm(false);
+      setMsg({ type: 'success', text: `User "${created.name}" created! They can now log in.` });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(u) {
+    if (!confirm(`Deactivate user "${u.name}"?`)) return;
+    await api.deleteUser(u.id).catch((e) => alert(e.message));
+    setUsers((prev) => prev.filter((x) => x.id !== u.id));
+  }
+
+  async function handlePasswordReset(u) {
+    const password = prompt(`Set a new password for ${u.name} (minimum 6 characters):`);
+    if (password === null) return;
+    if (password.length < 6) {
+      setMsg({ type: 'error', text: 'Password must be at least 6 characters.' });
+      return;
+    }
+    try {
+      await api.updateUser(u.id, { password });
+      setMsg({ type: 'success', text: `Password reset for ${u.name}.` });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    }
+  }
+
+  const roleBadge = (role) => {
+    const map = { owner: 'badge-purple', branch_manager: 'badge-teal', cashier: 'badge-amber' };
+    return map[role] || 'badge-gray';
+  };
+
+  return (
+    <div>
+      <div className="section-actions">
+        <div>
+          <div className="section-title">Users ({users.length})</div>
+          <p style={{ margin: 0 }}>Manage staff access across all branches</p>
+        </div>
+        <button id="add-user-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
+          {showForm ? '✕ Cancel' : '+ Add User'}
+        </button>
+      </div>
+
+      {msg && <div className={`status-msg ${msg.type}`} style={{ marginBottom: 14 }}>{msg.text}</div>}
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--border-active)' }}>
+          <h4 style={{ marginBottom: 14 }}>New User Account</h4>
+          <form onSubmit={handleCreate}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <input className="form-input" placeholder="Ahmed Khan" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email *</label>
+                <input className="form-input" type="email" placeholder="ahmed@example.com" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Profile Photo</label>
+              <input
+                className="form-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                    setMsg({ type: 'error', text: 'Profile photo must be 2 MB or smaller.' });
+                    e.target.value = '';
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => setForm((current) => ({ ...current, profile_photo: reader.result }));
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {form.profile_photo && <img className="profile-photo-preview" src={form.profile_photo} alt="Profile preview" />}
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Password *</label>
+                <input className="form-input" type="password" placeholder="Min 6 characters" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Role *</label>
+                <select className="form-select" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                  <option value="cashier">Cashier</option>
+                  <option value="branch_manager">Branch Manager</option>
+                  <option value="owner">Owner / Admin</option>
+                </select>
+              </div>
+            </div>
+            {(form.role === 'cashier' || form.role === 'branch_manager') && (
+              <div className="form-group">
+                <label className="form-label">Assign Branch *</label>
+                <select className="form-select" required value={form.branch_id} onChange={(e) => setForm({ ...form, branch_id: e.target.value })}>
+                  <option value="">— Select branch —</option>
+                  {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+              <button id="save-user-btn" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                {saving ? <span className="spinner" /> : '✓ Create User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="card">
+        {users.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No users yet</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Created</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div className="user-avatar" style={{ width: 28, height: 28, fontSize: '0.75rem' }}>
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                        <strong>{u.name}</strong>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{u.email}</td>
+                    <td><span className={`badge ${roleBadge(u.role)}`}>{u.role.replace('_', ' ')}</span></td>
+                    <td>{u.branch_name || <span style={{ color: 'var(--text-dim)' }}>All branches</span>}</td>
+                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handlePasswordReset(u)}>
+                        Reset password
+                      </button>{' '}
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u)}>
+                        🗑
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Admin Panel ───────────────────────────────────────────────
+export default function AdminPanel() {
+  const [activeTab, setActiveTab] = useState('branches');
+
+  return (
+    <div>
+      <div className="tabs">
+        <button id="tab-branches" className={`tab${activeTab === 'branches' ? ' active' : ''}`} onClick={() => setActiveTab('branches')}>🏢 Branches</button>
+        <button id="tab-services" className={`tab${activeTab === 'services' ? ' active' : ''}`} onClick={() => setActiveTab('services')}>🔧 Services</button>
+        <button id="tab-users"    className={`tab${activeTab === 'users'    ? ' active' : ''}`} onClick={() => setActiveTab('users')}>👥 Users</button>
+      </div>
+
+      {activeTab === 'branches' && <BranchesTab />}
+      {activeTab === 'services' && <ServicesTab />}
+      {activeTab === 'users'    && <UsersTab />}
+    </div>
+  );
+}

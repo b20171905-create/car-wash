@@ -1,0 +1,39 @@
+{
+  "name": "car-shop-pos-desktop",
+  "version": "1.0.0",
+  "description": "Car Shop POS - Windows Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "copy-frontend": "node copy-frontend.js",
+    "dist": "npm run copy-frontend && electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.carshop.pos",
+    "productName": "Car Shop POS",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "main.js",
+      "app/**/*",
+      "build/**/*"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
