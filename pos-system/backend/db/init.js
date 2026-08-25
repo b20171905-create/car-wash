@@ -61,7 +61,7 @@ const db = require('./index');
     ];
 
     for (const [name, duration, price] of services) {
-      await db.prepare(`INSERT INTO services (id, name, description, price, duration_minutes, active) VALUES ($1, $2, $3, $4, $5, 1)`).run(
+      await db.prepare(`INSERT INTO services (id, name, description, price, duration_minutes, active) VALUES ($1, $2, $3, $4, $5, true)`).run(
         uuid(),
         name,
         '',
