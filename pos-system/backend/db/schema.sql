@@ -1,72 +1,72 @@
--- Central database schema. One DB, all branches, filtered by branch_id.
+-- PostgreSQL schema for the car wash POS backend.
 
 CREATE TABLE IF NOT EXISTS branches (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   address TEXT,
   phone TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  branch_id TEXT REFERENCES branches(id), -- NULL for owner/admin who sees all branches
+  branch_id TEXT REFERENCES branches(id),
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   profile_photo TEXT,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('owner', 'branch_manager', 'cashier')),
-  active INTEGER DEFAULT 1,
-  created_at TEXT DEFAULT (datetime('now'))
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS services (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,          -- e.g. "Basic Wash", "Full Detailing", "Oil Change"
+  name TEXT NOT NULL,
   description TEXT,
-  price REAL NOT NULL,
+  price DOUBLE PRECISION NOT NULL,
   duration_minutes INTEGER,
-  active INTEGER DEFAULT 1,
-  created_at TEXT DEFAULT (datetime('now'))
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS customers (
   id TEXT PRIMARY KEY,
   name TEXT,
-  phone TEXT,                  -- used for WhatsApp receipt, include country code
+  phone TEXT,
   vehicle_type TEXT CHECK (vehicle_type IN ('motor_bike', 'car') OR vehicle_type IS NULL),
   vehicle_number TEXT,
   vehicle_model TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS sales (
   id TEXT PRIMARY KEY,
   branch_id TEXT NOT NULL REFERENCES branches(id),
-  user_id TEXT NOT NULL REFERENCES users(id),      -- cashier who processed it
+  user_id TEXT NOT NULL REFERENCES users(id),
   customer_id TEXT REFERENCES customers(id),
-  subtotal REAL NOT NULL,
-  discount REAL DEFAULT 0,
-  tax REAL DEFAULT 0,
-  total REAL NOT NULL,
+  subtotal DOUBLE PRECISION NOT NULL,
+  discount DOUBLE PRECISION DEFAULT 0,
+  tax DOUBLE PRECISION DEFAULT 0,
+  total DOUBLE PRECISION NOT NULL,
   payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'card', 'upi', 'wallet', 'other')),
   status TEXT NOT NULL DEFAULT 'paid' CHECK (status IN ('paid', 'refunded', 'void')),
   receipt_number TEXT UNIQUE,
-  whatsapp_sent_customer INTEGER DEFAULT 0,
-  whatsapp_sent_owner INTEGER DEFAULT 0,
-  email_sent_owner INTEGER DEFAULT 0,
-  printed INTEGER DEFAULT 0,
-  created_at TEXT DEFAULT (datetime('now'))
+  whatsapp_sent_customer BOOLEAN DEFAULT FALSE,
+  whatsapp_sent_owner BOOLEAN DEFAULT FALSE,
+  email_sent_owner BOOLEAN DEFAULT FALSE,
+  printed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS sale_items (
   id TEXT PRIMARY KEY,
   sale_id TEXT NOT NULL REFERENCES sales(id),
   service_id TEXT NOT NULL REFERENCES services(id),
-  service_name TEXT NOT NULL,   -- snapshot in case service is renamed later
+  service_name TEXT NOT NULL,
   quantity INTEGER DEFAULT 1,
-  unit_price REAL NOT NULL,
-  line_total REAL NOT NULL
+  unit_price DOUBLE PRECISION NOT NULL,
+  line_total DOUBLE PRECISION NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sales_branch ON sales(branch_id);
