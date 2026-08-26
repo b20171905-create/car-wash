@@ -1,12 +1,18 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
 const db = require('../db');
-const { requireAuth, scopeBranchId } = require('../services/auth');
+const {
+  requireAuth,
+  requireBranchManager,
+  requireCashierOrAbove,
+  scopeBranchId,
+} = require('../services/auth');
 const whatsapp = require('../services/whatsapp');
 const printService = require('../services/print');
 const emailService = require('../services/email');
 
 const router = express.Router();
+// All /api/sales routes require a valid JWT
 router.use(requireAuth);
 
 function nextReceiptNumber(branchId) {
@@ -14,13 +20,14 @@ function nextReceiptNumber(branchId) {
   return `${branchId.slice(0, 4).toUpperCase()}-${String(count + 1).padStart(5, '0')}`;
 }
 
-// Create a sale (checkout)
-router.post('/', (req, res) => {
+// Create a sale (checkout) — open to cashier and above
+router.post('/', requireCashierOrAbove, (req, res) => {
   const { branch_id, customer, items, discount = 0, tax = 0, payment_method } = req.body;
 
   if (!branch_id || !items || !items.length || !payment_method) {
     return res.status(400).json({ error: 'branch_id, items, and payment_method are required' });
   }
+  // Cashiers and branch_managers may only create sales for their own branch
   if (req.user.role !== 'owner' && req.user.branch_id !== branch_id) {
     return res.status(403).json({ error: 'Cannot create sale for another branch' });
   }
@@ -112,8 +119,9 @@ async function sendPostSaleNotifications(sale, branch, items, customer) {
   }
 }
 
-// List sales with optional filters
-router.get('/', (req, res) => {
+// List sales — branch_manager and owner only (cashiers cannot browse all sales)
+router.get('/', requireBranchManager, async (req, res, next) => {
+  try {
   const branchId = scopeBranchId(req);
   const { from, to, payment_method, receipt_number, customer_name, vehicle, vehicle_type, limit } = req.query;
 
@@ -145,12 +153,16 @@ router.get('/', (req, res) => {
     params.push(parsedLimit);
   }
 
-  const sales = db.prepare(query).all(...params);
-  res.json(sales);
+    const sales = await db.prepare(query).all(...params);
+    res.json(sales);
+  } catch (error) {
+    next(error);
+  }
 });
 
-// GET /api/sales/summary — dashboard summary per branch
-router.get('/summary', (req, res) => {
+// GET /api/sales/summary — branch_manager and owner only
+router.get('/summary', requireBranchManager, async (req, res, next) => {
+  try {
   const branchId = scopeBranchId(req);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -173,12 +185,16 @@ router.get('/summary', (req, res) => {
   if (branchId) { query += ' WHERE b.id = ?'; params.push(branchId); }
   query += ' GROUP BY b.id ORDER BY revenue DESC';
 
-  const summary = db.prepare(query).all(...params);
-  res.json(summary);
+    const summary = await db.prepare(query).all(...params);
+    res.json(summary);
+  } catch (error) {
+    next(error);
+  }
 });
 
-// GET /api/sales/monthly-summary — monthly revenue for the last 12 months
-router.get('/monthly-summary', (req, res) => {
+// GET /api/sales/monthly-summary — branch_manager and owner only
+router.get('/monthly-summary', requireBranchManager, async (req, res, next) => {
+  try {
   const branchId = scopeBranchId(req);
   const selectedYear = req.query.year;
   if (selectedYear && !/^\d{4}$/.test(selectedYear)) {
@@ -206,11 +222,15 @@ router.get('/monthly-summary', (req, res) => {
   if (branchId) { query += ' AND s.branch_id = ?'; params.push(branchId); }
   query += ' GROUP BY substr(s.created_at, 1, 7) ORDER BY month';
 
-  res.json(db.prepare(query).all(...params));
+    res.json(await db.prepare(query).all(...params));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// GET /api/sales/month-daily-summary?month=YYYY-MM — daily stats for one month
-router.get('/month-daily-summary', (req, res) => {
+// GET /api/sales/month-daily-summary?month=YYYY-MM — branch_manager and owner only
+router.get('/month-daily-summary', requireBranchManager, async (req, res, next) => {
+  try {
   const branchId = scopeBranchId(req);
   const month = req.query.month || new Date().toISOString().slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(month)) {
@@ -228,11 +248,14 @@ router.get('/month-daily-summary', (req, res) => {
   if (branchId) { query += ' AND s.branch_id = ?'; params.push(branchId); }
   query += ' GROUP BY substr(s.created_at, 1, 10) ORDER BY day';
 
-  res.json(db.prepare(query).all(...params));
+    res.json(await db.prepare(query).all(...params));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// GET /api/sales/:id — single sale with items (for reprint)
-router.get('/:id', (req, res) => {
+// GET /api/sales/:id — single sale with items (reprint) — branch_manager and owner only
+router.get('/:id', requireBranchManager, (req, res) => {
   const sale = db.prepare(`
     SELECT s.*, b.name as branch_name, b.address as branch_address, b.phone as branch_phone,
            c.name as customer_name, c.phone as customer_phone,
@@ -254,17 +277,16 @@ router.get('/:id', (req, res) => {
   res.json({ sale, items });
 });
 
-// POST /api/sales/:id/mark-printed
-router.post('/:id/mark-printed', (req, res) => {
+// POST /api/sales/:id/mark-printed — open to cashier and above (needed post-checkout)
+router.post('/:id/mark-printed', requireCashierOrAbove, (req, res) => {
   db.prepare('UPDATE sales SET printed = 1 WHERE id = ?').run(req.params.id);
   res.json({ updated: true });
 });
 
-module.exports = router;
 
-// POST /api/sales/:id/resend-notifications
-// Admin/owner can re-send notifications for a sale in case of earlier failures.
-router.post('/:id/resend-notifications', async (req, res) => {
+
+// POST /api/sales/:id/resend-notifications — branch_manager and owner only
+router.post('/:id/resend-notifications', requireBranchManager, async (req, res) => {
   const saleId = req.params.id;
 
   const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
@@ -310,3 +332,5 @@ router.post('/:id/resend-notifications', async (req, res) => {
     res.status(500).json({ error: err.message || String(err) });
   }
 });
+
+module.exports = router;
