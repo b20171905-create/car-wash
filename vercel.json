@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "projects": [
+    {
+      "name": "car-wash-backend",
+      "rootDirectory": "pos-system/backend"
+    },
+    {
+      "name": "car-wash-frontend",
+      "rootDirectory": "pos-system/frontend"
+    }
+  ]
+}
