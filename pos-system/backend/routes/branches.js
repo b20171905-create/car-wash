@@ -1,18 +1,24 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
 const db = require('../db');
-const { requireAuth } = require('../services/auth');
+const { requireAuth, requireOwner, requireBranchManager } = require('../services/auth');
 
 const router = express.Router();
+// All /api/branches routes require a valid JWT
 router.use(requireAuth);
 
-router.get('/', (req, res) => {
-  const branches = db.prepare('SELECT * FROM branches ORDER BY name').all();
-  res.json(branches);
+// GET / — branch_manager and owner only (cashiers have no need to enumerate branches)
+router.get('/', requireBranchManager, async (req, res, next) => {
+  try {
+    const branches = await db.prepare('SELECT * FROM branches ORDER BY name').all();
+    res.json(branches);
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.post('/', (req, res) => {
-  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only' });
+// POST / — owner only
+router.post('/', requireOwner, (req, res) => {
   const { name, address, phone } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   const id = uuid();
@@ -22,9 +28,8 @@ router.post('/', (req, res) => {
   res.status(201).json({ id, name, address, phone });
 });
 
-router.delete('/:id', (req, res) => {
-  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only' });
-
+// DELETE /:id — owner only
+router.delete('/:id', requireOwner, (req, res) => {
   const branch = db.prepare('SELECT id, name FROM branches WHERE id = ?').get(req.params.id);
   if (!branch) return res.status(404).json({ error: 'Branch not found' });
 

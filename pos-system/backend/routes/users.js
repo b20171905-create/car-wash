@@ -2,20 +2,16 @@ const express = require('express');
 const { v4: uuid } = require('uuid');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { requireAuth } = require('../services/auth');
+const { requireAuth, requireOwner, requireBranchManager } = require('../services/auth');
 
 const router = express.Router();
+// All /api/users routes require a valid JWT
 router.use(requireAuth);
 
-// Only owner can manage users; branch_manager can view their own branch users
-function canManageUsers(req) {
-  return req.user.role === 'owner';
-}
-
-// GET /api/users — list all active users (owner: all, manager: own branch)
-router.get('/', (req, res) => {
-  if (req.user.role === 'cashier') return res.status(403).json({ error: 'Not allowed' });
-
+// GET /api/users — branch_manager and owner only (cashiers blocked at middleware)
+// branch_manager sees only their own branch; owner sees all
+router.get('/', requireBranchManager, async (req, res, next) => {
+  try {
   let query = `
     SELECT u.id, u.name, u.email, u.profile_photo, u.role, u.active, u.created_at,
            u.branch_id, b.name as branch_name
@@ -31,14 +27,15 @@ router.get('/', (req, res) => {
   }
 
   query += ' ORDER BY u.created_at DESC';
-  const users = db.prepare(query).all(...params);
-  res.json(users);
+    const users = await db.prepare(query).all(...params);
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
 });
 
-// POST /api/users — create a new user (owner only)
-router.post('/', (req, res) => {
-  if (!canManageUsers(req)) return res.status(403).json({ error: 'Owner only' });
-
+// POST /api/users — owner only
+router.post('/', requireOwner, (req, res) => {
   const { name, email, password, profile_photo = null, role, branch_id } = req.body;
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'name, email, password, and role are required' });
@@ -67,10 +64,8 @@ router.post('/', (req, res) => {
   res.status(201).json(user);
 });
 
-// PUT /api/users/:id — update user info (owner only)
-router.put('/:id', (req, res) => {
-  if (!canManageUsers(req)) return res.status(403).json({ error: 'Owner only' });
-
+// PUT /api/users/:id — owner only
+router.put('/:id', requireOwner, (req, res) => {
   const { name, email, profile_photo, role, branch_id, password } = req.body;
   const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'User not found' });
@@ -98,9 +93,8 @@ router.put('/:id', (req, res) => {
   res.json(user);
 });
 
-// DELETE /api/users/:id — soft delete (owner only, cannot delete own account)
-router.delete('/:id', (req, res) => {
-  if (!canManageUsers(req)) return res.status(403).json({ error: 'Owner only' });
+// DELETE /api/users/:id — soft delete, owner only, cannot delete own account
+router.delete('/:id', requireOwner, (req, res) => {
   if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot deactivate your own account' });
 
   db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(req.params.id);

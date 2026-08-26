@@ -1,21 +1,20 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
 const db = require('../db');
-const { requireAuth } = require('../services/auth');
+const { requireAuth, requireOwner } = require('../services/auth');
 
 const router = express.Router();
+// All /api/services routes require a valid JWT
 router.use(requireAuth);
 
-function requireOwner(req, res, next) {
-  if (req.user.role !== 'owner') {
-    return res.status(403).json({ error: 'Only admins can manage services.' });
+// GET / — open to all authenticated roles (cashiers need the catalogue for checkout)
+router.get('/', async (req, res, next) => {
+  try {
+    const services = await db.prepare('SELECT * FROM services ORDER BY name').all();
+    res.json(services);
+  } catch (error) {
+    next(error);
   }
-  next();
-}
-
-router.get('/', (req, res) => {
-  const services = db.prepare('SELECT * FROM services ORDER BY name').all();
-  res.json(services);
 });
 
 router.post('/', requireOwner, (req, res) => {
