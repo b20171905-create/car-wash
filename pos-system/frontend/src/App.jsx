@@ -28,6 +28,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('checkout');
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('pos_user');
@@ -60,17 +61,28 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* Sidebar Overlay (Mobile) */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
         {/* Navigation */}
         <nav className="sidebar-nav">
+          <div className="sidebar-mobile-header">
+            <span className="sidebar-mobile-title">Navigation</span>
+            <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+              ✕
+            </button>
+          </div>
           <div className="nav-label">Menu</div>
           {allowedNav.map((item) => (
             <button
               key={item.key}
               id={`nav-${item.key}`}
               className={`nav-btn${view === item.key ? ' active' : ''}`}
-              onClick={() => setView(item.key)}
+              onClick={() => { setView(item.key); setSidebarOpen(false); }}
             >
               <span className="nav-icon">{item.icon}</span>
               {item.label}
@@ -83,11 +95,21 @@ export default function App() {
       {/* Main Content */}
       <main className="main-content">
         <header className="top-bar">
-          <div className="brand-logo">
-            <img className="brand-icon" src="/company-logo.jpeg" alt="Tiger Car Wash logo" />
-            <div className="brand-text">
-              <span className="brand-name">Tiger Car Wash</span>
-              <span className="brand-tagline">Multi-Branch POS</span>
+          <div className="top-bar-left">
+            <button
+              className="sidebar-toggle-btn"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <span aria-hidden="true">☰</span>
+              <span className="sidebar-toggle-label">Menu</span>
+            </button>
+            <div className="brand-logo">
+              <img className="brand-icon" src="/company-logo.jpeg" alt="Tiger Car Wash logo" />
+              <div className="brand-text">
+                <span className="brand-name">Tiger Car Wash</span>
+                <span className="brand-tagline">Multi-Branch POS</span>
+              </div>
             </div>
           </div>
           <div className="top-bar-account">
