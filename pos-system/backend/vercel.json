@@ -1,0 +1,13 @@
+{
+  "buildCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/"
+    }
+  ]
+}
