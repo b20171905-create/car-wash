@@ -84,6 +84,12 @@ const db = {
     for (const statement of statements) {
       await db.query(`${statement};`);
     }
+
+    const vehicleTypeMigration = fs.readFileSync(path.join(__dirname, 'migrate_vehicle_types.sql'), 'utf8');
+    const migrationStatements = vehicleTypeMigration.split(';').map((statement) => statement.trim()).filter(Boolean);
+    for (const statement of migrationStatements) {
+      await db.query(`${statement};`);
+    }
   } catch (error) {
     console.warn('Database initialization warning:', error.message);
   }
