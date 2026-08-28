@@ -17,7 +17,7 @@ router.get('/', requireBranchManager, async (req, res, next) => {
            u.branch_id, b.name as branch_name
     FROM users u
     LEFT JOIN branches b ON b.id = u.branch_id
-    WHERE u.active = 1
+    WHERE u.active = TRUE
   `;
   const params = [];
 
