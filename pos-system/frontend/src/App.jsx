@@ -29,6 +29,7 @@ export default function App() {
   const [view, setView] = useState('checkout');
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('pos_user');
@@ -39,6 +40,13 @@ export default function App() {
       if (u.role === 'owner') setView('dashboard');
     }
   }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    setPageLoading(true);
+    const timer = window.setTimeout(() => setPageLoading(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [view, user]);
 
   function handleLogin(u) {
     setUser(u);
@@ -148,10 +156,19 @@ export default function App() {
         </div>
 
         <div className="page-body">
-          {view === 'checkout' && <Checkout user={user} />}
-          {view === 'dashboard' && <Dashboard user={user} />}
-          {view === 'history' && <SalesHistory user={user} />}
-          {view === 'admin' && user.role === 'owner' && <AdminPanel />}
+          {pageLoading ? (
+            <div className="page-loading" role="status" aria-label="Loading page">
+              <div className="spinner" style={{ width: 40, height: 40 }} />
+              <p>Loading...</p>
+            </div>
+          ) : (
+            <>
+              {view === 'checkout' && <Checkout user={user} />}
+              {view === 'dashboard' && <Dashboard user={user} />}
+              {view === 'history' && <SalesHistory user={user} />}
+              {view === 'admin' && user.role === 'owner' && <AdminPanel />}
+            </>
+          )}
         </div>
       </main>
     </div>
