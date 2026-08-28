@@ -234,21 +234,23 @@ export default function Dashboard({ user }) {
           <h3>Weekly Sales Analysis</h3>
           <p>Revenue and sales count for the last seven days</p>
         </div>
-        <div className="weekly-bar-chart">
-          {weeklySales.map((day) => (
-            <div className="weekly-bar-column" key={day.key}>
-              <div className="weekly-bar-value">{day.revenue ? PKR(day.revenue) : 'Rs. 0'}</div>
-              <div className="weekly-bar-track">
-                <div
-                  className="weekly-bar"
-                  style={{ height: weeklyMax ? `${Math.max((day.revenue / weeklyMax) * 100, day.revenue ? 4 : 0)}%` : 0 }}
-                  title={`${day.dateLabel}: ${PKR(day.revenue)}, ${day.count} sales`}
-                />
+        <div className="chart-scroll-wrap">
+          <div className="weekly-bar-chart">
+            {weeklySales.map((day) => (
+              <div className="weekly-bar-column" key={day.key}>
+                <div className="weekly-bar-value">{day.revenue ? PKR(day.revenue) : 'Rs. 0'}</div>
+                <div className="weekly-bar-track">
+                  <div
+                    className="weekly-bar"
+                    style={{ height: weeklyMax ? `${Math.max((day.revenue / weeklyMax) * 100, day.revenue ? 4 : 0)}%` : 0 }}
+                    title={`${day.dateLabel}: ${PKR(day.revenue)}, ${day.count} sales`}
+                  />
+                </div>
+                <strong>{day.label}</strong>
+                <span>{day.dateLabel}</span>
               </div>
-              <strong>{day.label}</strong>
-              <span>{day.dateLabel}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -298,21 +300,23 @@ export default function Dashboard({ user }) {
         {yearlyMax === 0 ? (
           <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-title">No yearly sales yet</div></div>
         ) : (
-          <div className="weekly-bar-chart yearly-bar-chart">
-            {yearlyMonths.map((month) => (
-              <div className="weekly-bar-column" key={month.value}>
-                <div className="weekly-bar-value">{month.revenue ? PKR(month.revenue) : 'Rs. 0'}</div>
-                <div className="weekly-bar-track">
-                  <div
-                    className="weekly-bar"
-                    style={{ height: `${Math.max((month.revenue / yearlyMax) * 100, month.revenue ? 4 : 0)}%` }}
-                    title={`${month.label}: ${PKR(month.revenue)}, ${month.count} sales`}
-                  />
+          <div className="chart-scroll-wrap">
+            <div className="weekly-bar-chart yearly-bar-chart">
+              {yearlyMonths.map((month) => (
+                <div className="weekly-bar-column" key={month.value}>
+                  <div className="weekly-bar-value">{month.revenue ? PKR(month.revenue) : 'Rs. 0'}</div>
+                  <div className="weekly-bar-track">
+                    <div
+                      className="weekly-bar"
+                      style={{ height: `${Math.max((month.revenue / yearlyMax) * 100, month.revenue ? 4 : 0)}%` }}
+                      title={`${month.label}: ${PKR(month.revenue)}, ${month.count} sales`}
+                    />
+                  </div>
+                  <strong>{month.label}</strong>
+                  <span>{month.count} sales</span>
                 </div>
-                <strong>{month.label}</strong>
-                <span>{month.count} sales</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
