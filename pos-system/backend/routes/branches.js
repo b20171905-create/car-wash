@@ -32,6 +32,22 @@ router.post('/', requireOwner, async (req, res, next) => {
   }
 });
 
+// PUT /:id — owner only
+router.put('/:id', requireOwner, async (req, res, next) => {
+  const { name, address, phone } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'name required' });
+
+  try {
+    const result = await db.prepare(
+      'UPDATE branches SET name = ?, address = ?, phone = ? WHERE id = ?'
+    ).run(name.trim(), address || '', phone || '', req.params.id);
+    if (!result.changes) return res.status(404).json({ error: 'Branch not found' });
+    res.json(await db.prepare('SELECT * FROM branches WHERE id = ?').get(req.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // DELETE /:id — owner only
 router.delete('/:id', requireOwner, async (req, res, next) => {
   try {

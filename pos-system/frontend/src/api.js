@@ -34,6 +34,9 @@ export const api = {
   createBranch: (data) =>
     request('/branches', { method: 'POST', body: JSON.stringify(data) }),
 
+  updateBranch: (id, data) =>
+    request(`/branches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
   deleteBranch: (id) =>
     request(`/branches/${id}`, { method: 'DELETE' }),
 

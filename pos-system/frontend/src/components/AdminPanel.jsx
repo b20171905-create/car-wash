@@ -5,22 +5,41 @@ import { api } from '../api';
 function BranchesTab() {
   const [branches, setBranches] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => { api.getBranches().then(setBranches).catch(() => {}); }, []);
 
-  async function handleCreate(e) {
+  function resetForm() {
+    setForm({ name: '', address: '', phone: '' });
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function editBranch(branch) {
+    setForm({ name: branch.name || '', address: branch.address || '', phone: branch.phone || '' });
+    setEditingId(branch.id);
+    setShowForm(true);
+    setMsg(null);
+  }
+
+  function startAddBranch() {
+    resetForm();
+    setShowForm(true);
+  }
+
+  async function saveBranch(e) {
     e.preventDefault();
     setSaving(true);
     setMsg(null);
     try {
-      const b = await api.createBranch(form);
-      setBranches((prev) => [...prev, b]);
-      setForm({ name: '', address: '', phone: '' });
-      setShowForm(false);
-      setMsg({ type: 'success', text: `Branch "${b.name}" created!` });
+      const wasEditing = Boolean(editingId);
+      const b = editingId ? await api.updateBranch(editingId, form) : await api.createBranch(form);
+      setBranches((prev) => editingId ? prev.map((item) => item.id === b.id ? b : item) : [...prev, b]);
+      resetForm();
+      setMsg({ type: 'success', text: `Branch "${b.name}" ${wasEditing ? 'updated' : 'created'}!` });
     } catch (err) {
       setMsg({ type: 'error', text: err.message });
     } finally {
@@ -46,7 +65,7 @@ function BranchesTab() {
           <div className="section-title">Branches ({branches.length})</div>
           <p style={{ margin: 0 }}>Manage all car wash locations</p>
         </div>
-        <button id="add-branch-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
+        <button id="add-branch-btn" className="btn btn-primary btn-sm" onClick={() => showForm ? resetForm() : startAddBranch()}>
           {showForm ? '✕ Cancel' : '+ Add Branch'}
         </button>
       </div>
@@ -55,8 +74,8 @@ function BranchesTab() {
 
       {showForm && (
         <div className="card" style={{ marginBottom: 16, borderColor: 'var(--border-active)' }}>
-          <h4 style={{ marginBottom: 14 }}>New Branch</h4>
-          <form onSubmit={handleCreate}>
+          <h4 style={{ marginBottom: 14 }}>{editingId ? 'Edit Branch' : 'New Branch'}</h4>
+          <form onSubmit={saveBranch}>
             <div className="form-group">
               <label className="form-label">Branch Name *</label>
               <input className="form-input" placeholder="e.g. Gulshan Branch" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -74,7 +93,7 @@ function BranchesTab() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
               <button id="save-branch-btn" type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                {saving ? <span className="spinner" /> : '✓ Create Branch'}
+                {saving ? <span className="spinner" /> : `✓ ${editingId ? 'Save Changes' : 'Create Branch'}`}
               </button>
             </div>
           </form>
@@ -98,6 +117,7 @@ function BranchesTab() {
                     <td style={{ color: 'var(--text-muted)' }}>{b.phone || '—'}</td>
                     <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(b.created_at).toLocaleDateString()}</td>
                     <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => editBranch(b)}>Edit</button>{' '}
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(b)}>Delete</button>
                     </td>
                   </tr>
