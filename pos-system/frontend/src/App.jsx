@@ -44,7 +44,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return undefined;
     setPageLoading(true);
-    const timer = window.setTimeout(() => setPageLoading(false), 2000);
+    const timer = window.setTimeout(() => setPageLoading(false), 1000);
     return () => window.clearTimeout(timer);
   }, [view, user]);
 

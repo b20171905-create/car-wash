@@ -450,18 +450,34 @@ function UsersTab() {
 // ── Admin Panel ───────────────────────────────────────────────
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('branches');
+  const [tabLoading, setTabLoading] = useState(false);
+
+  function changeTab(tab) {
+    setActiveTab(tab);
+    setTabLoading(true);
+    window.setTimeout(() => setTabLoading(false), 1000);
+  }
 
   return (
     <div>
       <div className="tabs">
-        <button id="tab-branches" className={`tab${activeTab === 'branches' ? ' active' : ''}`} onClick={() => setActiveTab('branches')}>🏢 Branches</button>
-        <button id="tab-services" className={`tab${activeTab === 'services' ? ' active' : ''}`} onClick={() => setActiveTab('services')}>🔧 Services</button>
-        <button id="tab-users"    className={`tab${activeTab === 'users'    ? ' active' : ''}`} onClick={() => setActiveTab('users')}>👥 Users</button>
+        <button id="tab-branches" className={`tab${activeTab === 'branches' ? ' active' : ''}`} onClick={() => changeTab('branches')}>🏢 Branches</button>
+        <button id="tab-services" className={`tab${activeTab === 'services' ? ' active' : ''}`} onClick={() => changeTab('services')}>🔧 Services</button>
+        <button id="tab-users"    className={`tab${activeTab === 'users'    ? ' active' : ''}`} onClick={() => changeTab('users')}>👥 Users</button>
       </div>
 
-      {activeTab === 'branches' && <BranchesTab />}
-      {activeTab === 'services' && <ServicesTab />}
-      {activeTab === 'users'    && <UsersTab />}
+      {tabLoading ? (
+        <div className="page-loading" role="status" aria-label="Loading admin section">
+          <div className="spinner" style={{ width: 36, height: 36 }} />
+          <p>Loading...</p>
+        </div>
+      ) : (
+        <>
+          {activeTab === 'branches' && <BranchesTab />}
+          {activeTab === 'services' && <ServicesTab />}
+          {activeTab === 'users' && <UsersTab />}
+        </>
+      )}
     </div>
   );
 }
