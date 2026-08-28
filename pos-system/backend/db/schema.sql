@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS customers (
   id TEXT PRIMARY KEY,
   name TEXT,
   phone TEXT,
-  vehicle_type TEXT CHECK (vehicle_type IN ('motor_bike', 'car') OR vehicle_type IS NULL),
+  vehicle_type TEXT CHECK (vehicle_type IN ('bike', 'car', 'rikshaw', 'suv', 'coaster', 'truck') OR vehicle_type IS NULL),
   vehicle_number TEXT,
   vehicle_model TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()

@@ -29,10 +29,19 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   if (!branch_id || !items || !items.length || !payment_method) {
     return res.status(400).json({ error: 'branch_id, items, and payment_method are required' });
   }
-  if (!customer || !customer.name?.trim() || !customer.phone?.trim() || !customer.vehicle_number?.trim() || !customer.vehicle_type || !customer.vehicle_model?.trim()) {
-    return res.status(400).json({ error: 'Customer name, contact number, vehicle number, vehicle type, and vehicle model are required' });
+  if (!customer || !customer.name?.trim() || !customer.phone?.trim() || !customer.vehicle_number?.trim() || !customer.vehicle_type) {
+    return res.status(400).json({ error: 'Customer name, contact number, vehicle number, and vehicle type are required' });
   }
-  if (!['motor_bike', 'car'].includes(customer.vehicle_type)) {
+  if (!/^[A-Za-z ]+$/.test(customer.name.trim())) {
+    return res.status(400).json({ error: 'Customer name must contain letters and spaces only' });
+  }
+  if (!/^\+92\d{11}$/.test(customer.phone.trim())) {
+    return res.status(400).json({ error: 'Contact number must be +92 followed by exactly 11 digits' });
+  }
+  if (!/^[A-Za-z]{1,3}[- ]\d{1,4}$/.test(customer.vehicle_number.trim())) {
+    return res.status(400).json({ error: 'Vehicle number must be like ABC-1234 or ABC 1234' });
+  }
+  if (!['bike', 'car', 'rikshaw', 'suv', 'coaster', 'truck'].includes(customer.vehicle_type)) {
     return res.status(400).json({ error: 'A valid vehicle type is required' });
   }
   // Cashiers and branch_managers may only create sales for their own branch
@@ -65,7 +74,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
     customerId = uuid();
     await db.prepare(
       'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(customerId, customer.name || '', customer.phone || '', customer.vehicle_type || null, customer.vehicle_number || '', customer.vehicle_model || '');
+    ).run(customerId, customer.name.trim(), customer.phone.trim(), customer.vehicle_type, customer.vehicle_number.trim(), '');
   }
 
   const saleId = uuid();
@@ -183,8 +192,8 @@ router.get('/summary', requireBranchManager, async (req, res, next) => {
            COALESCE(SUM(s.total), 0) as revenue,
            COALESCE(SUM(CASE WHEN date(s.created_at) = ? THEN s.total ELSE 0 END), 0) as today_revenue,
            COUNT(CASE WHEN date(s.created_at) = ? THEN 1 END) as today_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'motor_bike' THEN s.total ELSE 0 END), 0) as today_bike_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'motor_bike' THEN 1 END) as today_bike_count,
+           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN s.total ELSE 0 END), 0) as today_bike_revenue,
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN 1 END) as today_bike_count,
            COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN s.total ELSE 0 END), 0) as today_car_revenue,
            COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) as today_car_count
     FROM branches b

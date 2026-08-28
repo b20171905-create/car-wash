@@ -136,7 +136,11 @@ export default function SalesHistory({ user }) {
             <label className="form-label">Vehicle Type</label>
             <select className="form-select" value={vehicleTypeFilter} onChange={(e) => setVehicleTypeFilter(e.target.value)} style={{ width: 150 }}>
               <option value="">All Vehicles</option>
-              <option value="motor_bike">Motor Bike</option>
+              <option value="bike">Bike</option>
+              <option value="rikshaw">Rikshaw</option>
+              <option value="suv">SUV</option>
+              <option value="coaster">Coaster</option>
+              <option value="truck">Truck</option>
               <option value="car">Car</option>
             </select>
           </div>
@@ -219,7 +223,7 @@ export default function SalesHistory({ user }) {
                     {user.role === 'owner' && <td>{s.branch_name}</td>}
                     <td>{s.customer_name || <span style={{ color: 'var(--text-dim)' }}>Walk-in</span>}</td>
                     <td>
-                      {s.vehicle_type === 'motor_bike' ? 'Bike' : s.vehicle_type === 'car' ? 'Car' : <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                      {s.vehicle_type ? s.vehicle_type.replace('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : <span style={{ color: 'var(--text-dim)' }}>—</span>}
                     </td>
                     <td>
                       {s.vehicle_number

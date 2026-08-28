@@ -69,6 +69,7 @@ npm run initdb         # Run seed script locally
 
 # Or manually via Supabase SQL Editor
 # Paste the schema from db/schema.sql into the SQL Editor and execute
+# If the database already exists, also run db/migrate_vehicle_types.sql once.
 ```
 
 ### 5. Test the Backend

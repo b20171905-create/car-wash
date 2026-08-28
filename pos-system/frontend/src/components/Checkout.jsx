@@ -31,10 +31,9 @@ export default function Checkout({ user }) {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('+92');
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [vehicleType, setVehicleType] = useState('');
-  const [vehicleModel, setVehicleModel] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [discount, setDiscount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,10 +77,9 @@ export default function Checkout({ user }) {
   function clearCart() {
     setCart([]);
     setCustomerName('');
-    setCustomerPhone('');
+    setCustomerPhone('+92');
     setVehicleNumber('');
     setVehicleType('');
-    setVehicleModel('');
     setDiscount('');
     setStatusMsg(null);
   }
@@ -92,8 +90,23 @@ export default function Checkout({ user }) {
 
   async function handleCheckout() {
     if (!cart.length) return;
-    if (!customerName.trim() || !customerPhone.trim() || !vehicleNumber.trim() || !vehicleType || !vehicleModel.trim()) {
-      setStatusMsg({ type: 'error', text: 'Please complete all customer and vehicle details before billing.' });
+    const namePattern = /^[A-Za-z ]+$/;
+    const phonePattern = /^\+92\d{11}$/;
+    const vehiclePattern = /^[A-Za-z]{1,3}[- ]\d{1,4}$/;
+    if (!namePattern.test(customerName.trim())) {
+      setStatusMsg({ type: 'error', text: 'Customer name must contain letters and spaces only.' });
+      return;
+    }
+    if (!phonePattern.test(customerPhone.trim())) {
+      setStatusMsg({ type: 'error', text: 'Contact number must be +92 followed by exactly 11 digits.' });
+      return;
+    }
+    if (!vehiclePattern.test(vehicleNumber.trim())) {
+      setStatusMsg({ type: 'error', text: 'Vehicle number must be like ABC-1234 or ABC 1234.' });
+      return;
+    }
+    if (!vehicleType) {
+      setStatusMsg({ type: 'error', text: 'Please select a vehicle type before billing.' });
       return;
     }
     setLoading(true);
@@ -102,9 +115,7 @@ export default function Checkout({ user }) {
     try {
       const payload = {
         branch_id: user.branch_id,
-        customer: (customerName || customerPhone)
-          ? { name: customerName, phone: customerPhone, vehicle_type: vehicleType || null, vehicle_number: vehicleNumber, vehicle_model: vehicleModel }
-          : null,
+        customer: { name: customerName.trim(), phone: customerPhone.trim(), vehicle_type: vehicleType, vehicle_number: vehicleNumber.trim() },
         items: cart.map((i) => ({ service_id: i.service_id, quantity: i.quantity })),
         discount: discountAmt,
         payment_method: paymentMethod,
@@ -190,29 +201,29 @@ export default function Checkout({ user }) {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Customer Name *</label>
-              <input className="form-input" placeholder="e.g. Ahmed Khan" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              <input className="form-input" placeholder="e.g. Ahmed Khan" value={customerName} onChange={(e) => setCustomerName(e.target.value.replace(/[^A-Za-z ]/g, ''))} maxLength={60} required />
             </div>
             <div className="form-group">
               <label className="form-label">Phone / WhatsApp *</label>
-              <input className="form-input" type="tel" placeholder="+92 300 1234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
+              <input className="form-input" type="tel" placeholder="+9230012345678" value={customerPhone} onChange={(e) => setCustomerPhone(`+92${e.target.value.replace(/\D/g, '').replace(/^92/, '').slice(0, 11)}`)} maxLength={14} inputMode="tel" required />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Vehicle Number *</label>
-              <input className="form-input" placeholder="e.g. ABC-123" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required />
+              <input className="form-input" placeholder="e.g. ABC-1234" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 8))} maxLength={8} required />
             </div>
             <div className="form-group">
               <label className="form-label">Vehicle Type *</label>
               <select className="form-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} required>
                 <option value="">Select vehicle type</option>
-                <option value="motor_bike">Motor Bike</option>
+                <option value="bike">Bike</option>
                 <option value="car">Car</option>
+                <option value="rikshaw">Rikshaw</option>
+                <option value="suv">SUV</option>
+                <option value="coaster">Coaster</option>
+                <option value="truck">Truck</option>
               </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Vehicle Model *</label>
-              <input className="form-input" placeholder="e.g. Toyota Corolla" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} required />
             </div>
           </div>
         </div>
