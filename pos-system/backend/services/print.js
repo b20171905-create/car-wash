@@ -42,17 +42,17 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.left;
 
   for (const item of items) {
-    const name = item.service_name.padEnd(20).slice(0, 20);
-    const qty = `x${item.quantity}`.padEnd(4);
-    const amt = `₹${item.line_total.toFixed(2)}`.padStart(8);
+    const name = String(item.service_name || 'Service').padEnd(20).slice(0, 20);
+    const qty = `x${Number(item.quantity || 0)}`.padEnd(4);
+    const amt = `Rs. ${Number(item.line_total || 0).toFixed(2)}`.padStart(10);
     r += `${name}${qty}${amt}\n`;
   }
 
   r += '--------------------------------\n';
-  if (sale.discount > 0) r += `Discount:`.padEnd(24) + `-₹${sale.discount.toFixed(2)}\n`;
-  if (sale.tax > 0) r += `Tax:`.padEnd(24) + `₹${sale.tax.toFixed(2)}\n`;
+  if (Number(sale.discount || 0) > 0) r += 'Discount:'.padEnd(24) + `-Rs. ${Number(sale.discount).toFixed(2)}\n`;
+  if (Number(sale.tax || 0) > 0) r += 'Tax:'.padEnd(24) + `Rs. ${Number(sale.tax).toFixed(2)}\n`;
   r += commands.boldOn;
-  r += `TOTAL:`.padEnd(24) + `₹${sale.total.toFixed(2)}\n`;
+  r += 'TOTAL:'.padEnd(24) + `Rs. ${Number(sale.total || 0).toFixed(2)}\n`;
   r += commands.boldOff;
   r += `Paid via: ${sale.payment_method === 'upi' ? 'BANK TRANSFER' : sale.payment_method.toUpperCase()}\n`;
   r += commands.feed(1);

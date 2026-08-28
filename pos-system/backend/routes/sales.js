@@ -15,13 +15,15 @@ const router = express.Router();
 // All /api/sales routes require a valid JWT
 router.use(requireAuth);
 
-function nextReceiptNumber(branchId) {
-  const count = db.prepare('SELECT COUNT(*) as c FROM sales WHERE branch_id = ?').get(branchId).c;
+async function nextReceiptNumber(branchId) {
+  const result = await db.prepare('SELECT COUNT(*) as c FROM sales WHERE branch_id = ?').get(branchId);
+  const count = Number(result?.c || 0);
   return `${branchId.slice(0, 4).toUpperCase()}-${String(count + 1).padStart(5, '0')}`;
 }
 
 // Create a sale (checkout) — open to cashier and above
-router.post('/', requireCashierOrAbove, (req, res) => {
+router.post('/', requireCashierOrAbove, async (req, res, next) => {
+  try {
   const { branch_id, customer, items, discount = 0, tax = 0, payment_method } = req.body;
 
   if (!branch_id || !items || !items.length || !payment_method) {
@@ -32,11 +34,11 @@ router.post('/', requireCashierOrAbove, (req, res) => {
     return res.status(403).json({ error: 'Cannot create sale for another branch' });
   }
 
-  const branch = db.prepare('SELECT * FROM branches WHERE id = ?').get(branch_id);
+  const branch = await db.prepare('SELECT * FROM branches WHERE id = ?').get(branch_id);
   if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
-  const resolvedItems = items.map((i) => {
-    const svc = db.prepare('SELECT * FROM services WHERE id = ?').get(i.service_id);
+  const resolvedItems = await Promise.all(items.map(async (i) => {
+    const svc = await db.prepare('SELECT * FROM services WHERE id = ?').get(i.service_id);
     if (!svc) throw new Error(`Service ${i.service_id} not found`);
     const quantity = i.quantity || 1;
     return {
@@ -47,7 +49,7 @@ router.post('/', requireCashierOrAbove, (req, res) => {
       unit_price: svc.price,
       line_total: svc.price * quantity,
     };
-  });
+  }));
 
   const subtotal = resolvedItems.reduce((sum, i) => sum + i.line_total, 0);
   const total = Math.max(0, subtotal - discount + tax);
@@ -55,13 +57,13 @@ router.post('/', requireCashierOrAbove, (req, res) => {
   let customerId = null;
   if (customer && (customer.phone || customer.name)) {
     customerId = uuid();
-    db.prepare(
+    await db.prepare(
       'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(customerId, customer.name || '', customer.phone || '', customer.vehicle_type || null, customer.vehicle_number || '', customer.vehicle_model || '');
   }
 
   const saleId = uuid();
-  const receiptNumber = nextReceiptNumber(branch_id);
+  const receiptNumber = await nextReceiptNumber(branch_id);
 
   const insertSale = db.prepare(
     `INSERT INTO sales (id, branch_id, user_id, customer_id, subtotal, discount, tax, total,
@@ -72,15 +74,15 @@ router.post('/', requireCashierOrAbove, (req, res) => {
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
 
-  const runTxn = db.transaction(() => {
-    insertSale.run(saleId, branch_id, req.user.id, customerId, subtotal, discount, tax, total, payment_method, receiptNumber);
+  const runTxn = db.transaction(async () => {
+    await insertSale.run(saleId, branch_id, req.user.id, customerId, subtotal, discount, tax, total, payment_method, receiptNumber);
     for (const item of resolvedItems) {
-      insertItem.run(item.id, saleId, item.service_id, item.service_name, item.quantity, item.unit_price, item.line_total);
+      await insertItem.run(item.id, saleId, item.service_id, item.service_name, item.quantity, item.unit_price, item.line_total);
     }
   });
-  runTxn();
+  await runTxn();
 
-  const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
+  const sale = await db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
 
   res.status(201).json({
     sale,
@@ -92,6 +94,9 @@ router.post('/', requireCashierOrAbove, (req, res) => {
   sendPostSaleNotifications(sale, branch, resolvedItems, customer).catch((err) =>
     console.error('[sales] notification error:', err)
   );
+  } catch (error) {
+    next(error);
+  }
 });
 
 async function sendPostSaleNotifications(sale, branch, items, customer) {
