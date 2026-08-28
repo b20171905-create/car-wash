@@ -20,6 +20,8 @@ function normalizeSql(sql, params) {
   return { sql: normalized, params };
 }
 
+let databaseReady = Promise.resolve();
+
 function prepareStatement(sql) {
   if (sql.trim().toLowerCase().startsWith('pragma')) {
     return {
@@ -31,18 +33,21 @@ function prepareStatement(sql) {
 
   return {
     all: async (...args) => {
+      await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await pool.query(normalizedSql, normalizedParams);
       return result.rows;
     },
     get: async (...args) => {
+      await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await pool.query(normalizedSql, normalizedParams);
       return result.rows[0] || null;
     },
     run: async (...args) => {
+      await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await pool.query(normalizedSql, normalizedParams);
@@ -56,8 +61,12 @@ function prepareStatement(sql) {
 
 const db = {
   prepare: prepareStatement,
-  query: (sql, params = []) => pool.query(sql, params),
+  query: async (sql, params = []) => {
+    await databaseReady;
+    return pool.query(sql, params);
+  },
   transaction: (callback) => async () => {
+    await databaseReady;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -75,7 +84,7 @@ const db = {
   close: () => pool.end(),
 };
 
-(async () => {
+databaseReady = (async () => {
   try {
     const fs = require('fs');
     const path = require('path');
