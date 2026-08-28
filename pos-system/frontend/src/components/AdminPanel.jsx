@@ -272,7 +272,7 @@ function UsersTab() {
     setSaving(true);
     setMsg(null);
     try {
-      const created = await api.createUser(form);
+      const created = await api.createUser({ ...form, email: form.email.trim().toLowerCase() });
       setUsers((prev) => [...prev, created]);
       setForm({ name: '', email: '', password: '', profile_photo: '', role: 'cashier', branch_id: '' });
       setShowForm(false);
@@ -353,7 +353,19 @@ function UsersTab() {
                     return;
                   }
                   const reader = new FileReader();
-                  reader.onload = () => setForm((current) => ({ ...current, profile_photo: reader.result }));
+                  reader.onload = () => {
+                    const image = new Image();
+                    image.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      const size = 256;
+                      const scale = Math.min(size / image.width, size / image.height, 1);
+                      canvas.width = Math.max(1, Math.round(image.width * scale));
+                      canvas.height = Math.max(1, Math.round(image.height * scale));
+                      canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                      setForm((current) => ({ ...current, profile_photo: canvas.toDataURL('image/jpeg', 0.72) }));
+                    };
+                    image.src = reader.result;
+                  };
                   reader.readAsDataURL(file);
                 }}
               />

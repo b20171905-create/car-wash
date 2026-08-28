@@ -35,8 +35,9 @@ router.get('/', requireBranchManager, async (req, res, next) => {
 });
 
 // POST /api/users — owner only
-router.post('/', requireOwner, (req, res) => {
-  const { name, email, password, profile_photo = null, role, branch_id } = req.body;
+router.post('/', requireOwner, async (req, res, next) => {
+  const { name, password, profile_photo = null, role, branch_id } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'name, email, password, and role are required' });
   }
@@ -47,21 +48,26 @@ router.post('/', requireOwner, (req, res) => {
     return res.status(400).json({ error: 'branch_id required for branch_manager and cashier' });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (existing) return res.status(409).json({ error: 'Email already exists' });
+  try {
+    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existing) return res.status(409).json({ error: 'Email already exists. Use a different email address.' });
 
-  const id = uuid();
-  const passwordHash = bcrypt.hashSync(password, 10);
-  db.prepare(
-     `INSERT INTO users (id, branch_id, name, email, profile_photo, password_hash, role, active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)`
-    ).run(id, branch_id || null, name, email, profile_photo, passwordHash, role);
+    const id = uuid();
+    const passwordHash = bcrypt.hashSync(password, 10);
+    await db.prepare(
+       `INSERT INTO users (id, branch_id, name, email, profile_photo, password_hash, role, active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1)`
+      ).run(id, branch_id || null, name.trim(), email, profile_photo, passwordHash, role);
 
-  const user = db.prepare(
-    `SELECT u.id, u.name, u.email, u.profile_photo, u.role, u.active, u.branch_id, b.name as branch_name
-     FROM users u LEFT JOIN branches b ON b.id = u.branch_id WHERE u.id = ?`
-  ).get(id);
-  res.status(201).json(user);
+    const user = await db.prepare(
+      `SELECT u.id, u.name, u.email, u.profile_photo, u.role, u.active, u.branch_id, b.name as branch_name
+       FROM users u LEFT JOIN branches b ON b.id = u.branch_id WHERE u.id = ?`
+    ).get(id);
+    res.status(201).json(user);
+  } catch (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Email already exists. Use a different email address.' });
+    next(error);
+  }
 });
 
 // PUT /api/users/:id — owner only
