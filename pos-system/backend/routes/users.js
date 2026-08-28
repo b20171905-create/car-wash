@@ -56,7 +56,7 @@ router.post('/', requireOwner, async (req, res, next) => {
     const passwordHash = bcrypt.hashSync(password, 10);
     await db.prepare(
        `INSERT INTO users (id, branch_id, name, email, profile_photo, password_hash, role, active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1)`
+        VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`
       ).run(id, branch_id || null, name.trim(), email, profile_photo, passwordHash, role);
 
     const user = await db.prepare(
@@ -103,7 +103,7 @@ router.put('/:id', requireOwner, (req, res) => {
 router.delete('/:id', requireOwner, (req, res) => {
   if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot deactivate your own account' });
 
-  db.prepare('UPDATE users SET active = 0 WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE users SET active = FALSE WHERE id = ?').run(req.params.id);
   res.json({ deactivated: true });
 });
 

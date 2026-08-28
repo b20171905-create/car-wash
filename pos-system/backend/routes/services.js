@@ -17,19 +17,23 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.post('/', requireOwner, (req, res) => {
-  const { name, description = '', price, duration_minutes = null, active = 1 } = req.body;
+router.post('/', requireOwner, async (req, res, next) => {
+  const { name, description = '', price, duration_minutes = null, active = true } = req.body;
   if (!name || price === undefined || Number.isNaN(Number(price)) || Number(price) < 0) {
     return res.status(400).json({ error: 'Name and a valid non-negative price are required.' });
   }
 
   const id = uuid();
-  db.prepare(`
-    INSERT INTO services (id, name, description, price, duration_minutes, active)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, name.trim(), description, Number(price), duration_minutes ? Number(duration_minutes) : null, active ? 1 : 0);
+  try {
+    await db.prepare(`
+      INSERT INTO services (id, name, description, price, duration_minutes, active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, name.trim(), description, Number(price), duration_minutes ? Number(duration_minutes) : null, Boolean(active));
 
-  res.status(201).json(db.prepare('SELECT * FROM services WHERE id = ?').get(id));
+    res.status(201).json(await db.prepare('SELECT * FROM services WHERE id = ?').get(id));
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.put('/:id', requireOwner, (req, res) => {
