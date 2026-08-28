@@ -19,6 +19,7 @@ export default function SalesHistory({ user }) {
   const [loading, setLoading] = useState(true);
   const [reprinting, setReprinting] = useState(null);
   const [receiptData, setReceiptData] = useState(null);
+  const [receiptAction, setReceiptAction] = useState(null);
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
@@ -57,15 +58,26 @@ export default function SalesHistory({ user }) {
     setLoading(false);
   }
 
-  async function handleReprint(saleId) {
+  async function handleReceiptAction(saleId, action = null) {
     setReprinting(saleId);
     try {
       const data = await api.getSale(saleId);
       setReceiptData(data);
+      setReceiptAction(action);
     } catch (e) {
       alert('Could not load receipt: ' + e.message);
     } finally {
       setReprinting(null);
+    }
+  }
+
+  async function handleDelete(sale) {
+    if (!window.confirm(`Delete sale ${sale.receipt_number}? This cannot be undone.`)) return;
+    try {
+      await api.deleteSale(sale.id);
+      setSales((current) => current.filter((item) => item.id !== sale.id));
+    } catch (error) {
+      alert(error.message);
     }
   }
 
@@ -209,7 +221,7 @@ export default function SalesHistory({ user }) {
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Date & Time</th>
-                  <th>Reprint</th>
+                  {user.role === 'owner' && <th>Admin Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -235,16 +247,14 @@ export default function SalesHistory({ user }) {
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                       {new Date(s.created_at).toLocaleString('en-PK')}
                     </td>
-                    <td>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        title="Reprint receipt"
-                        onClick={() => handleReprint(s.id)}
-                        disabled={reprinting === s.id}
-                      >
-                        {reprinting === s.id ? <span className="spinner" style={{ width: 14, height: 14 }} /> : '🖨️ Print'}
-                      </button>
-                    </td>
+                    {user.role === 'owner' && (
+                      <td className="sales-admin-actions">
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id)} disabled={reprinting === s.id}>👁 Preview</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id, 'download')} disabled={reprinting === s.id}>📥 Download</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id, 'print')} disabled={reprinting === s.id}>🖨️ Print</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s)}>🗑 Delete</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -254,7 +264,7 @@ export default function SalesHistory({ user }) {
       </div>
 
       {receiptData && (
-        <ReceiptModal saleData={receiptData} onClose={() => setReceiptData(null)} />
+        <ReceiptModal saleData={receiptData} autoAction={receiptAction} adminActions={user.role === 'owner'} onClose={() => { setReceiptData(null); setReceiptAction(null); }} />
       )}
     </div>
   );

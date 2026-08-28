@@ -72,6 +72,8 @@ export const api = {
 
   getSale: (id) => request(`/sales/${id}`),
 
+  deleteSale: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
+
   getSummary: () => request('/sales/summary'),
 
   getMonthlySummary: (year) => request(`/sales/monthly-summary${year ? `?year=${encodeURIComponent(year)}` : ''}`),

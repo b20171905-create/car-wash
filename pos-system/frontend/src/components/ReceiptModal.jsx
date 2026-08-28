@@ -1,13 +1,27 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 
-export default function ReceiptModal({ saleData, onClose }) {
+export default function ReceiptModal({ saleData, onClose, adminActions = false, autoAction = null }) {
   const printRef = useRef();
+  const [downloadError, setDownloadError] = useState('');
+
+  const sale = saleData?.sale;
+
+  useEffect(() => {
+    if (!sale || !autoAction) return;
+    const timer = window.setTimeout(() => {
+      if (autoAction === 'print') handlePrint();
+      if (autoAction === 'download') handleDownload();
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [sale, autoAction]);
 
   if (!saleData) return null;
 
-  const { sale, items, branch } = saleData;
+  const { items, branch } = saleData;
 
   // Derive branch info — could come from sale directly (from getSale) or passed as branch obj
   const branchName = branch?.name || sale.branch_name || 'Tiger Car Wash';
@@ -19,6 +33,20 @@ export default function ReceiptModal({ saleData, onClose }) {
 
   function handlePrint() {
     window.print();
+  }
+
+  async function handleDownload() {
+    setDownloadError('');
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+      const width = 130;
+      const height = (canvas.height * width) / canvas.width;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 14, 14, width, height);
+      pdf.save(`Tiger-Car-Wash-${sale.receipt_number}.pdf`);
+    } catch {
+      setDownloadError('Could not download the receipt PDF.');
+    }
   }
 
   return (
@@ -143,6 +171,12 @@ export default function ReceiptModal({ saleData, onClose }) {
           >
             🖨️ Print Receipt
           </button>
+          {adminActions && (
+            <button id="download-receipt-btn" className="btn btn-secondary" onClick={handleDownload}>
+              📥 Download PDF
+            </button>
+          )}
+          {downloadError && <div className="status-msg error">{downloadError}</div>}
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ const {
   requireAuth,
   requireBranchManager,
   requireCashierOrAbove,
+  requireOwner,
   scopeBranchId,
 } = require('../services/auth');
 const whatsapp = require('../services/whatsapp');
@@ -275,8 +276,9 @@ router.get('/month-daily-summary', requireBranchManager, async (req, res, next) 
 });
 
 // GET /api/sales/:id — single sale with items (reprint) — branch_manager and owner only
-router.get('/:id', requireBranchManager, (req, res) => {
-  const sale = db.prepare(`
+router.get('/:id', requireBranchManager, async (req, res, next) => {
+  try {
+  const sale = await db.prepare(`
     SELECT s.*, b.name as branch_name, b.address as branch_address, b.phone as branch_phone,
            c.name as customer_name, c.phone as customer_phone,
            c.vehicle_number, c.vehicle_model
@@ -293,8 +295,29 @@ router.get('/:id', requireBranchManager, (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const items = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(req.params.id);
+  const items = await db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(req.params.id);
   res.json({ sale, items });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/sales/:id - owner/admin only
+router.delete('/:id', requireOwner, async (req, res, next) => {
+  try {
+    const sale = await db.prepare('SELECT id, customer_id FROM sales WHERE id = ?').get(req.params.id);
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+
+    const removeSale = db.transaction(async () => {
+      await db.prepare('DELETE FROM sale_items WHERE sale_id = ?').run(req.params.id);
+      await db.prepare('DELETE FROM sales WHERE id = ?').run(req.params.id);
+      if (sale.customer_id) await db.prepare('DELETE FROM customers WHERE id = ?').run(sale.customer_id);
+    });
+    await removeSale();
+    res.json({ deleted: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // POST /api/sales/:id/mark-printed — open to cashier and above (needed post-checkout)
