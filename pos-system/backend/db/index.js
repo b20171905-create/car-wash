@@ -98,6 +98,14 @@ databaseReady = (async () => {
   for (const statement of migrationStatements) {
     await pool.query(`${statement};`);
   }
+
+  await pool.query(`
+    SELECT setval(
+      'receipt_number_seq',
+      COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
+      COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
+    ) FROM sales;
+  `);
 })();
 
 databaseReady.catch((error) => console.error('Database initialization failed:', error));

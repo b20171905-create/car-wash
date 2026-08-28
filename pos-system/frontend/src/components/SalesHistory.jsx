@@ -20,6 +20,7 @@ export default function SalesHistory({ user }) {
   const [reprinting, setReprinting] = useState(null);
   const [receiptData, setReceiptData] = useState(null);
   const [receiptAction, setReceiptAction] = useState(null);
+  const [openActionId, setOpenActionId] = useState(null);
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
@@ -249,10 +250,24 @@ export default function SalesHistory({ user }) {
                     </td>
                     {user.role === 'owner' && (
                       <td className="sales-admin-actions">
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id)} disabled={reprinting === s.id}>👁 Preview</button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id, 'download')} disabled={reprinting === s.id}>📥 Download</button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleReceiptAction(s.id, 'print')} disabled={reprinting === s.id}>🖨️ Print</button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s)}>🗑 Delete</button>
+                        <div className="action-menu">
+                          <button
+                            className="action-menu-trigger"
+                            aria-label={`Actions for receipt ${s.receipt_number}`}
+                            aria-expanded={openActionId === s.id}
+                            onClick={() => setOpenActionId((current) => current === s.id ? null : s.id)}
+                          >
+                            ⋮
+                          </button>
+                          {openActionId === s.id && (
+                            <div className="action-menu-dropdown">
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }}>👁 Preview</button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'download'); }}>📥 Download</button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }}>🖨️ Print</button>
+                              <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(s); }}>🗑 Delete</button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>

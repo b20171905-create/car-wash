@@ -1140,6 +1140,63 @@ tr:hover td { background: var(--surface); }
   color: var(--text);
 }
 
+.sales-admin-actions {
+  position: relative;
+  width: 58px;
+  text-align: center;
+}
+
+.action-menu { position: relative; display: inline-block; }
+
+.action-menu-trigger {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg3);
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.action-menu-trigger:hover,
+.action-menu-trigger[aria-expanded="true"] {
+  border-color: var(--border-active);
+  color: var(--teal-dark);
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 140px;
+  padding: 4px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.action-menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action-menu-dropdown button:hover { background: var(--surface-hover); }
+.action-menu-dropdown button.danger { color: var(--red); }
+
 /* ── Status Messages ─────────────────────────────────── */
 .status-msg {
   display: flex;

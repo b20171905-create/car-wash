@@ -16,10 +16,9 @@ const router = express.Router();
 // All /api/sales routes require a valid JWT
 router.use(requireAuth);
 
-async function nextReceiptNumber(branchId) {
-  const result = await db.prepare('SELECT COUNT(*) as c FROM sales WHERE branch_id = ?').get(branchId);
-  const count = Number(result?.c || 0);
-  return `${branchId.slice(0, 4).toUpperCase()}-${String(count + 1).padStart(5, '0')}`;
+async function nextReceiptNumber() {
+  const result = await db.query("SELECT LPAD(nextval('receipt_number_seq')::text, 3, '0') AS receipt_number");
+  return result.rows[0].receipt_number;
 }
 
 // Create a sale (checkout) — open to cashier and above
@@ -93,7 +92,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   }
 
   const saleId = uuid();
-  const receiptNumber = await nextReceiptNumber(branch_id);
+  const receiptNumber = await nextReceiptNumber();
 
   const runTxn = db.transaction(async (transactionDb) => {
     if (customerId) {

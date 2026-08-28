@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS sale_items (
   line_total DOUBLE PRECISION NOT NULL
 );
 
+CREATE SEQUENCE IF NOT EXISTS receipt_number_seq;
+
 CREATE INDEX IF NOT EXISTS idx_sales_branch ON sales(branch_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
