@@ -894,6 +894,18 @@ tr:hover td { background: var(--surface); }
 .checkout-left { overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
 .checkout-right { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
 
+@media (min-width: 1025px) {
+  .checkout-layout {
+    height: calc(100vh - 180px);
+    min-height: 0;
+  }
+
+  .checkout-left,
+  .checkout-right {
+    overflow-y: hidden;
+  }
+}
+
 /* ── Service Grid ─────────────────────────────────────── */
 .services-search {
   position: relative;
