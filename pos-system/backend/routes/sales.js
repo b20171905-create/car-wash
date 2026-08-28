@@ -45,6 +45,17 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   if (!['bike', 'car', 'rikshaw', 'suv', 'coaster', 'truck'].includes(customer.vehicle_type)) {
     return res.status(400).json({ error: 'A valid vehicle type is required' });
   }
+  if (!['cash', 'card', 'upi', 'wallet', 'other'].includes(payment_method)) {
+    return res.status(400).json({ error: 'A valid payment method is required' });
+  }
+  const numericDiscount = Number(discount);
+  const numericTax = Number(tax);
+  if (!Number.isFinite(numericDiscount) || numericDiscount < 0 || !Number.isFinite(numericTax) || numericTax < 0) {
+    return res.status(400).json({ error: 'Discount and tax must be non-negative numbers' });
+  }
+  if (items.length > 100) {
+    return res.status(400).json({ error: 'A sale cannot contain more than 100 items' });
+  }
   // Cashiers and branch_managers may only create sales for their own branch
   if (req.user.role !== 'owner' && req.user.branch_id !== branch_id) {
     return res.status(403).json({ error: 'Cannot create sale for another branch' });
@@ -54,9 +65,12 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
   const resolvedItems = await Promise.all(items.map(async (i) => {
-    const svc = await db.prepare('SELECT * FROM services WHERE id = ?').get(i.service_id);
-    if (!svc) throw new Error(`Service ${i.service_id} not found`);
-    const quantity = i.quantity || 1;
+    const svc = await db.prepare('SELECT * FROM services WHERE id = ? AND active = TRUE').get(i.service_id);
+    if (!svc) throw new Error(`Active service ${i.service_id} not found`);
+    const quantity = Number(i.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+      throw new Error('Each item quantity must be a whole number from 1 to 100');
+    }
     return {
       id: uuid(),
       service_id: svc.id,
@@ -68,30 +82,33 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   }));
 
   const subtotal = resolvedItems.reduce((sum, i) => sum + i.line_total, 0);
-  const total = Math.max(0, subtotal - discount + tax);
+  if (numericDiscount > subtotal) {
+    return res.status(400).json({ error: 'Discount cannot exceed the subtotal' });
+  }
+  const total = Math.max(0, subtotal - numericDiscount + numericTax);
 
   let customerId = null;
   if (customer) {
     customerId = uuid();
-    await db.prepare(
-      'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(customerId, customer.name.trim(), customer.phone.trim(), customer.vehicle_type, customer.vehicle_number.trim(), '');
   }
 
   const saleId = uuid();
   const receiptNumber = await nextReceiptNumber(branch_id);
 
-  const insertSale = db.prepare(
-    `INSERT INTO sales (id, branch_id, user_id, customer_id, subtotal, discount, tax, total,
-     payment_method, receipt_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-  const insertItem = db.prepare(
-    `INSERT INTO sale_items (id, sale_id, service_id, service_name, quantity, unit_price, line_total)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  );
-
-  const runTxn = db.transaction(async () => {
-    await insertSale.run(saleId, branch_id, req.user.id, customerId, subtotal, discount, tax, total, payment_method, receiptNumber);
+  const runTxn = db.transaction(async (transactionDb) => {
+    if (customerId) {
+      await transactionDb.prepare(
+        'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(customerId, customer.name.trim(), customer.phone.trim(), customer.vehicle_type, customer.vehicle_number.trim(), '');
+    }
+    await transactionDb.prepare(
+      `INSERT INTO sales (id, branch_id, user_id, customer_id, subtotal, discount, tax, total,
+       payment_method, receipt_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(saleId, branch_id, req.user.id, customerId, subtotal, numericDiscount, numericTax, total, payment_method, receiptNumber);
+    const insertItem = transactionDb.prepare(
+      `INSERT INTO sale_items (id, sale_id, service_id, service_name, quantity, unit_price, line_total)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
     for (const item of resolvedItems) {
       await insertItem.run(item.id, saleId, item.service_id, item.service_name, item.quantity, item.unit_price, item.line_total);
     }
@@ -120,7 +137,7 @@ async function sendPostSaleNotifications(sale, branch, items, customer) {
     const msg = whatsapp.buildCustomerReceiptMessage(sale, branch, items);
     const result = await whatsapp.sendText(customer.phone, msg);
     if (result.success) {
-      db.prepare('UPDATE sales SET whatsapp_sent_customer = 1 WHERE id = ?').run(sale.id);
+      await db.prepare('UPDATE sales SET whatsapp_sent_customer = TRUE WHERE id = ?').run(sale.id);
     }
   }
   const ownerNumber = process.env.OWNER_WHATSAPP_NUMBER;
@@ -128,14 +145,14 @@ async function sendPostSaleNotifications(sale, branch, items, customer) {
     const msg = whatsapp.buildOwnerAlertMessage(sale, branch);
     const result = await whatsapp.sendText(ownerNumber, msg);
     if (result.success) {
-      db.prepare('UPDATE sales SET whatsapp_sent_owner = 1 WHERE id = ?').run(sale.id);
+      await db.prepare('UPDATE sales SET whatsapp_sent_owner = TRUE WHERE id = ?').run(sale.id);
     }
   }
   const ownerEmail = process.env.OWNER_EMAIL;
   if (ownerEmail) {
     const emailResult = await emailService.sendAdminSaleEmail(ownerEmail, sale, branch, items);
     if (emailResult.success) {
-      db.prepare('UPDATE sales SET email_sent_owner = 1 WHERE id = ?').run(sale.id);
+      await db.prepare('UPDATE sales SET email_sent_owner = TRUE WHERE id = ?').run(sale.id);
     }
   }
 }
@@ -308,10 +325,10 @@ router.delete('/:id', requireOwner, async (req, res, next) => {
     const sale = await db.prepare('SELECT id, customer_id FROM sales WHERE id = ?').get(req.params.id);
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
-    const removeSale = db.transaction(async () => {
-      await db.prepare('DELETE FROM sale_items WHERE sale_id = ?').run(req.params.id);
-      await db.prepare('DELETE FROM sales WHERE id = ?').run(req.params.id);
-      if (sale.customer_id) await db.prepare('DELETE FROM customers WHERE id = ?').run(sale.customer_id);
+    const removeSale = db.transaction(async (transactionDb) => {
+      await transactionDb.prepare('DELETE FROM sale_items WHERE sale_id = ?').run(req.params.id);
+      await transactionDb.prepare('DELETE FROM sales WHERE id = ?').run(req.params.id);
+      if (sale.customer_id) await transactionDb.prepare('DELETE FROM customers WHERE id = ?').run(sale.customer_id);
     });
     await removeSale();
     res.json({ deleted: true });
@@ -321,9 +338,14 @@ router.delete('/:id', requireOwner, async (req, res, next) => {
 });
 
 // POST /api/sales/:id/mark-printed — open to cashier and above (needed post-checkout)
-router.post('/:id/mark-printed', requireCashierOrAbove, (req, res) => {
-  db.prepare('UPDATE sales SET printed = 1 WHERE id = ?').run(req.params.id);
-  res.json({ updated: true });
+router.post('/:id/mark-printed', requireCashierOrAbove, async (req, res, next) => {
+  try {
+    const result = await db.prepare('UPDATE sales SET printed = TRUE WHERE id = ?').run(req.params.id);
+    if (!result.changes) return res.status(404).json({ error: 'Sale not found' });
+    res.json({ updated: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
 
@@ -332,7 +354,7 @@ router.post('/:id/mark-printed', requireCashierOrAbove, (req, res) => {
 router.post('/:id/resend-notifications', requireBranchManager, async (req, res) => {
   const saleId = req.params.id;
 
-  const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
+  const sale = await db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
   if (!sale) return res.status(404).json({ error: 'Sale not found' });
 
   // Branch scoping for non-owners
@@ -340,9 +362,9 @@ router.post('/:id/resend-notifications', requireBranchManager, async (req, res) 
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  const branch = db.prepare('SELECT * FROM branches WHERE id = ?').get(sale.branch_id);
-  const items = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(saleId);
-  const customer = sale.customer_id ? db.prepare('SELECT * FROM customers WHERE id = ?').get(sale.customer_id) : null;
+  const branch = await db.prepare('SELECT * FROM branches WHERE id = ?').get(sale.branch_id);
+  const items = await db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(saleId);
+  const customer = sale.customer_id ? await db.prepare('SELECT * FROM customers WHERE id = ?').get(sale.customer_id) : null;
 
   const results = { customer: null, owner_whatsapp: null, owner_email: null };
 
@@ -351,7 +373,7 @@ router.post('/:id/resend-notifications', requireBranchManager, async (req, res) 
       const msg = whatsapp.buildCustomerReceiptMessage(sale, branch, items);
       const r = await whatsapp.sendText(customer.phone, msg);
       results.customer = r;
-      if (r.success) db.prepare('UPDATE sales SET whatsapp_sent_customer = 1 WHERE id = ?').run(saleId);
+      if (r.success) await db.prepare('UPDATE sales SET whatsapp_sent_customer = TRUE WHERE id = ?').run(saleId);
     }
 
     const ownerNumber = process.env.OWNER_WHATSAPP_NUMBER;
@@ -359,14 +381,14 @@ router.post('/:id/resend-notifications', requireBranchManager, async (req, res) 
       const msg = whatsapp.buildOwnerAlertMessage(sale, branch);
       const r = await whatsapp.sendText(ownerNumber, msg);
       results.owner_whatsapp = r;
-      if (r.success) db.prepare('UPDATE sales SET whatsapp_sent_owner = 1 WHERE id = ?').run(saleId);
+      if (r.success) await db.prepare('UPDATE sales SET whatsapp_sent_owner = TRUE WHERE id = ?').run(saleId);
     }
 
     const ownerEmail = process.env.OWNER_EMAIL;
     if (ownerEmail) {
       const r = await emailService.sendAdminSaleEmail(ownerEmail, sale, branch, items);
       results.owner_email = r;
-      if (r.success) db.prepare('UPDATE sales SET email_sent_owner = 1 WHERE id = ?').run(saleId);
+      if (r.success) await db.prepare('UPDATE sales SET email_sent_owner = TRUE WHERE id = ?').run(saleId);
     }
 
     res.json({ ok: true, results });

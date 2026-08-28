@@ -22,7 +22,7 @@ function normalizeSql(sql, params) {
 
 let databaseReady = Promise.resolve();
 
-function prepareStatement(sql) {
+function prepareStatement(sql, executor = pool) {
   if (sql.trim().toLowerCase().startsWith('pragma')) {
     return {
       all: async () => [],
@@ -36,21 +36,21 @@ function prepareStatement(sql) {
       await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await pool.query(normalizedSql, normalizedParams);
+      const result = await executor.query(normalizedSql, normalizedParams);
       return result.rows;
     },
     get: async (...args) => {
       await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await pool.query(normalizedSql, normalizedParams);
+      const result = await executor.query(normalizedSql, normalizedParams);
       return result.rows[0] || null;
     },
     run: async (...args) => {
       await databaseReady;
       const params = args.flat();
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await pool.query(normalizedSql, normalizedParams);
+      const result = await executor.query(normalizedSql, normalizedParams);
       return {
         lastInsertRowid: result.rows?.[0]?.id ?? null,
         changes: result.rowCount || 0,
@@ -70,7 +70,7 @@ const db = {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const result = await callback();
+      const result = await callback({ prepare: (sql) => prepareStatement(sql, client) });
       await client.query('COMMIT');
       return result;
     } catch (error) {
@@ -85,25 +85,21 @@ const db = {
 };
 
 databaseReady = (async () => {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-    const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
-    for (const statement of statements) {
-      await pool.query(`${statement};`);
-    }
-
-    const vehicleTypeMigration = fs.readFileSync(path.join(__dirname, 'migrate_vehicle_types.sql'), 'utf8');
-    const migrationStatements = vehicleTypeMigration.split(';').map((statement) => statement.trim()).filter(Boolean);
-    for (const statement of migrationStatements) {
-      await pool.query(`${statement};`);
-    }
-  } catch (error) {
-    console.warn('Database initialization warning:', error.message);
+  const fs = require('fs');
+  const path = require('path');
+  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
+  for (const statement of statements) {
+    await pool.query(`${statement};`);
   }
-})().catch((error) => {
-  console.error('Database initialization failed:', error);
-});
+
+  const vehicleTypeMigration = fs.readFileSync(path.join(__dirname, 'migrate_vehicle_types.sql'), 'utf8');
+  const migrationStatements = vehicleTypeMigration.split(';').map((statement) => statement.trim()).filter(Boolean);
+  for (const statement of migrationStatements) {
+    await pool.query(`${statement};`);
+  }
+})();
+
+databaseReady.catch((error) => console.error('Database initialization failed:', error));
 
 module.exports = db;

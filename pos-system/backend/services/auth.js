@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
+const db = require('../db');
 require('dotenv').config();
 
-const SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error('JWT_SECRET must be set before starting the backend.');
+}
 
 // ---------------------------------------------------------------------------
 // Token helpers
@@ -18,12 +22,14 @@ function createToken(user) {
 // ---------------------------------------------------------------------------
 // requireAuth — verifies JWT, attaches req.user
 // ---------------------------------------------------------------------------
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Missing token' });
   try {
     req.user = jwt.verify(token, SECRET);
+    const user = await db.prepare('SELECT active FROM users WHERE id = ?').get(req.user.id);
+    if (!user?.active) return res.status(401).json({ error: 'User account is inactive' });
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });

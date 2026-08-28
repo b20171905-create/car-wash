@@ -34,7 +34,8 @@ router.use(enforceBranchScope);
 // GET /api/analytics/branch
 // Summary stats per branch (today, overall, by vehicle type)
 // ---------------------------------------------------------------------------
-router.get('/branch', (req, res) => {
+router.get('/branch', async (req, res, next) => {
+  try {
   const branchId = req.scopedBranchId; // set by enforceBranchScope
   const today = new Date().toISOString().slice(0, 10);
 
@@ -64,14 +65,18 @@ router.get('/branch', (req, res) => {
 
   query += ' GROUP BY b.id ORDER BY revenue DESC';
 
-  res.json(db.prepare(query).all(...params));
+  res.json(await db.prepare(query).all(...params));
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/analytics/monthly?year=YYYY
 // Monthly revenue totals (last 12 months or full year)
 // ---------------------------------------------------------------------------
-router.get('/monthly', (req, res) => {
+router.get('/monthly', async (req, res, next) => {
+  try {
   const branchId = req.scopedBranchId;
 
   const selectedYear = req.query.year;
@@ -109,14 +114,18 @@ router.get('/monthly', (req, res) => {
 
   query += ' GROUP BY substr(s.created_at, 1, 7) ORDER BY month';
 
-  res.json(db.prepare(query).all(...params));
+  res.json(await db.prepare(query).all(...params));
+  } catch (error) {
+    next(error);
+  }
 });
 
 // ---------------------------------------------------------------------------
 // GET /api/analytics/daily?month=YYYY-MM
 // Day-by-day breakdown for a given month
 // ---------------------------------------------------------------------------
-router.get('/daily', (req, res) => {
+router.get('/daily', async (req, res, next) => {
+  try {
   const branchId = req.scopedBranchId;
   const month = req.query.month || new Date().toISOString().slice(0, 7);
 
@@ -142,7 +151,10 @@ router.get('/daily', (req, res) => {
 
   query += ' GROUP BY substr(s.created_at, 1, 10) ORDER BY day';
 
-  res.json(db.prepare(query).all(...params));
+  res.json(await db.prepare(query).all(...params));
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

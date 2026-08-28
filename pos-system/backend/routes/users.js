@@ -71,9 +71,10 @@ router.post('/', requireOwner, async (req, res, next) => {
 });
 
 // PUT /api/users/:id — owner only
-router.put('/:id', requireOwner, (req, res) => {
+router.put('/:id', requireOwner, async (req, res, next) => {
+  try {
   const { name, email, profile_photo, role, branch_id, password } = req.body;
-  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'User not found' });
 
   let passwordHash = existing.password_hash;
@@ -81,7 +82,7 @@ router.put('/:id', requireOwner, (req, res) => {
     passwordHash = bcrypt.hashSync(password, 10);
   }
 
-  db.prepare(
+  await db.prepare(
     `UPDATE users SET
        name = COALESCE(?, name),
       email = COALESCE(?, email),
@@ -92,19 +93,27 @@ router.put('/:id', requireOwner, (req, res) => {
      WHERE id = ?`
   ).run(name, email, profile_photo, role, branch_id, passwordHash, req.params.id);
 
-  const user = db.prepare(
+  const user = await db.prepare(
     `SELECT u.id, u.name, u.email, u.profile_photo, u.role, u.active, u.branch_id, b.name as branch_name
      FROM users u LEFT JOIN branches b ON b.id = u.branch_id WHERE u.id = ?`
   ).get(req.params.id);
   res.json(user);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // DELETE /api/users/:id — soft delete, owner only, cannot delete own account
-router.delete('/:id', requireOwner, (req, res) => {
+router.delete('/:id', requireOwner, async (req, res, next) => {
   if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot deactivate your own account' });
 
-  db.prepare('UPDATE users SET active = FALSE WHERE id = ?').run(req.params.id);
-  res.json({ deactivated: true });
+  try {
+    const result = await db.prepare('UPDATE users SET active = FALSE WHERE id = ?').run(req.params.id);
+    if (!result.changes) return res.status(404).json({ error: 'User not found' });
+    res.json({ deactivated: true });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;
