@@ -92,6 +92,10 @@ export default function Checkout({ user }) {
 
   async function handleCheckout() {
     if (!cart.length) return;
+    if (!customerName.trim() || !customerPhone.trim() || !vehicleNumber.trim() || !vehicleType || !vehicleModel.trim()) {
+      setStatusMsg({ type: 'error', text: 'Please complete all customer and vehicle details before billing.' });
+      return;
+    }
     setLoading(true);
     setStatusMsg(null);
 
@@ -182,33 +186,33 @@ export default function Checkout({ user }) {
 
         {/* Customer Info */}
         <div className="card">
-          <h3 style={{ marginBottom: 14 }}>Customer Info <span style={{ color: 'var(--text-dim)', fontWeight: 400, fontSize: '0.8rem' }}>(optional)</span></h3>
+          <h3 style={{ marginBottom: 14 }}>Customer Info <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: '0.8rem' }}>* Required</span></h3>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Customer Name</label>
-              <input className="form-input" placeholder="e.g. Ahmed Khan" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+              <label className="form-label">Customer Name *</label>
+              <input className="form-input" placeholder="e.g. Ahmed Khan" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
             </div>
             <div className="form-group">
-              <label className="form-label">Phone / WhatsApp</label>
-              <input className="form-input" placeholder="+92 300 1234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+              <label className="form-label">Phone / WhatsApp *</label>
+              <input className="form-input" type="tel" placeholder="+92 300 1234567" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Vehicle Number</label>
-              <input className="form-input" placeholder="e.g. ABC-123" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} />
+              <label className="form-label">Vehicle Number *</label>
+              <input className="form-input" placeholder="e.g. ABC-123" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required />
             </div>
             <div className="form-group">
-              <label className="form-label">Vehicle Type</label>
-              <select className="form-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)}>
+              <label className="form-label">Vehicle Type *</label>
+              <select className="form-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} required>
                 <option value="">Select vehicle type</option>
                 <option value="motor_bike">Motor Bike</option>
                 <option value="car">Car</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Vehicle Model</label>
-              <input className="form-input" placeholder="e.g. Toyota Corolla" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} />
+              <label className="form-label">Vehicle Model *</label>
+              <input className="form-input" placeholder="e.g. Toyota Corolla" value={vehicleModel} onChange={(e) => setVehicleModel(e.target.value)} required />
             </div>
           </div>
         </div>
