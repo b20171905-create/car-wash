@@ -29,6 +29,12 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   if (!branch_id || !items || !items.length || !payment_method) {
     return res.status(400).json({ error: 'branch_id, items, and payment_method are required' });
   }
+  if (!customer || !customer.name?.trim() || !customer.phone?.trim() || !customer.vehicle_number?.trim() || !customer.vehicle_type || !customer.vehicle_model?.trim()) {
+    return res.status(400).json({ error: 'Customer name, contact number, vehicle number, vehicle type, and vehicle model are required' });
+  }
+  if (!['motor_bike', 'car'].includes(customer.vehicle_type)) {
+    return res.status(400).json({ error: 'A valid vehicle type is required' });
+  }
   // Cashiers and branch_managers may only create sales for their own branch
   if (req.user.role !== 'owner' && req.user.branch_id !== branch_id) {
     return res.status(403).json({ error: 'Cannot create sale for another branch' });
@@ -55,7 +61,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   const total = Math.max(0, subtotal - discount + tax);
 
   let customerId = null;
-  if (customer && (customer.phone || customer.name)) {
+  if (customer) {
     customerId = uuid();
     await db.prepare(
       'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
