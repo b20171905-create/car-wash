@@ -24,13 +24,13 @@ export default function SalesHistory({ user }) {
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
   const [fromDate, setFromDate] = useState(() => `${localDateString().slice(0, 8)}01`);
   const [toDate, setToDate] = useState(() => localDateString());
   const [branchFilter, setBranchFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
-  const [receiptSearch, setReceiptSearch] = useState('');
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [vehicleSearch, setVehicleSearch] = useState('');
+  const [searchField, setSearchField] = useState('customer_name');
+  const [searchValue, setSearchValue] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
 
   useEffect(() => {
@@ -41,7 +41,11 @@ export default function SalesHistory({ user }) {
   async function loadSales() {
     setLoading(true);
     const params = {};
-    if (singleDate) {
+    if (monthFilter) {
+      params.from = `${monthFilter}-01`;
+      const [year, month] = monthFilter.split('-').map(Number);
+      params.to = `${monthFilter}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}T23:59:59`;
+    } else if (singleDate) {
       params.from = singleDate;
       params.to = singleDate + 'T23:59:59';
     } else {
@@ -50,9 +54,7 @@ export default function SalesHistory({ user }) {
     }
     if (branchFilter) params.branch_id = branchFilter;
     if (paymentFilter) params.payment_method = paymentFilter;
-    if (receiptSearch) params.receipt_number = receiptSearch;
-    if (customerSearch) params.customer_name = customerSearch;
-    if (vehicleSearch) params.vehicle = vehicleSearch;
+    if (searchValue) params[searchField] = searchValue;
     if (vehicleTypeFilter) params.vehicle_type = vehicleTypeFilter;
     const data = await api.getSales(params).catch(() => []);
     setSales(data);
@@ -93,28 +95,34 @@ export default function SalesHistory({ user }) {
     <div className="sales-history-content">
       {/* Filter Bar */}
       <div className="card card-sm sales-history-filters" style={{ marginBottom: 16 }}>
-        <div className="filter-bar">
+        <div className="filter-row search-filter-row">
           <div>
-            <label className="form-label">Receipt Number</label>
-            <input className="form-input" placeholder="Search receipt" value={receiptSearch} onChange={(e) => setReceiptSearch(e.target.value)} style={{ width: 160 }} />
+            <label className="form-label">Search By</label>
+            <select className="form-select" value={searchField} onChange={(e) => setSearchField(e.target.value)}>
+              <option value="customer_name">Customer Name</option>
+              <option value="vehicle">Vehicle ID / Number</option>
+              <option value="receipt_number">Receipt Number</option>
+            </select>
           </div>
-          <div>
-            <label className="form-label">Customer Name</label>
-            <input className="form-input" placeholder="Search customer" value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} style={{ width: 160 }} />
+          <div className="search-filter-input">
+            <label className="form-label">Search Value</label>
+            <input className="form-input" placeholder={`Search ${searchField === 'customer_name' ? 'customer name' : searchField === 'vehicle' ? 'vehicle ID or number' : 'receipt number'}`} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
           </div>
-          <div>
-            <label className="form-label">Vehicle ID / Number</label>
-            <input className="form-input" placeholder="Search vehicle" value={vehicleSearch} onChange={(e) => setVehicleSearch(e.target.value)} style={{ width: 160 }} />
-          </div>
+        </div>
+        <div className="filter-row date-filter-row">
           <div>
             <label className="form-label">Date</label>
             <input
               className="form-input"
               type="date"
               value={singleDate}
-              onChange={(e) => { setSingleDate(e.target.value); setFromDate(''); setToDate(''); }}
+              onChange={(e) => { setSingleDate(e.target.value); setMonthFilter(''); setFromDate(''); setToDate(''); }}
               style={{ width: 150 }}
             />
+          </div>
+          <div>
+            <label className="form-label">Month</label>
+            <input className="form-input" type="month" value={monthFilter} onChange={(e) => { setMonthFilter(e.target.value); setSingleDate(''); setFromDate(''); setToDate(''); }} style={{ width: 150 }} />
           </div>
           <div>
             <label className="form-label">From Date</label>
@@ -122,7 +130,7 @@ export default function SalesHistory({ user }) {
               className="form-input"
               type="date"
               value={fromDate}
-              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
+              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); setMonthFilter(''); }}
               style={{ width: 150 }}
             />
           </div>
@@ -132,7 +140,7 @@ export default function SalesHistory({ user }) {
               className="form-input"
               type="date"
               value={toDate}
-              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
+              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); setMonthFilter(''); }}
               style={{ width: 150 }}
             />
           </div>
@@ -163,13 +171,13 @@ export default function SalesHistory({ user }) {
               {Object.entries(PAYMENT_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
           </div>
-          <div style={{ alignSelf: 'flex-end' }}>
+          <div className="filter-actions">
             <button id="apply-filter-btn" className="btn btn-primary" onClick={loadSales}>
               🔍 Apply
             </button>
           </div>
-          <div style={{ alignSelf: 'flex-end' }}>
-            <button className="btn btn-ghost" onClick={() => { setSingleDate(''); setFromDate(''); setToDate(''); setBranchFilter(''); setPaymentFilter(''); setReceiptSearch(''); setCustomerSearch(''); setVehicleSearch(''); setVehicleTypeFilter(''); setTimeout(loadSales, 0); }}>
+          <div className="filter-actions">
+            <button className="btn btn-ghost" onClick={() => { setSingleDate(''); setMonthFilter(''); setFromDate(''); setToDate(''); setBranchFilter(''); setPaymentFilter(''); setSearchValue(''); setVehicleTypeFilter(''); setTimeout(loadSales, 0); }}>
               ✕ Clear
             </button>
           </div>

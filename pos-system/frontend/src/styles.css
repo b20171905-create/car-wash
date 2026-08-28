@@ -1400,6 +1400,29 @@ tr:hover td { background: var(--surface); }
   margin-bottom: 16px;
 }
 
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-row + .filter-row {
+  margin-top: 12px;
+}
+
+.search-filter-input {
+  flex: 1 1 260px;
+}
+
+.search-filter-input .form-input {
+  width: 100%;
+}
+
+.filter-actions {
+  align-self: flex-end;
+}
+
 .filter-bar .form-select,
 .filter-bar .form-input {
   width: auto;
