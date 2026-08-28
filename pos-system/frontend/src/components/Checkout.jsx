@@ -23,7 +23,6 @@ const PAYMENT_OPTIONS = [
   { value: 'cash',   label: 'Cash',   icon: '💵' },
   { value: 'card',   label: 'Card',   icon: '💳' },
   { value: 'upi',    label: 'Bank Transfer', icon: '🏦' },
-  { value: 'wallet', label: 'Wallet', icon: '👛' },
 ];
 
 export default function Checkout({ user }) {
