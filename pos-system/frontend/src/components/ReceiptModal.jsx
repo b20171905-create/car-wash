@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 
@@ -9,12 +9,6 @@ export default function ReceiptModal({ saleData, onClose }) {
 
   const { sale, items, branch } = saleData;
 
-  useEffect(() => {
-    if (window.electronAPI?.downloadReceiptPdf) {
-      window.electronAPI.downloadReceiptPdf('', sale.receipt_number).catch(() => {});
-    }
-  }, [sale.receipt_number]);
-
   // Derive branch info — could come from sale directly (from getSale) or passed as branch obj
   const branchName = branch?.name || sale.branch_name || 'Tiger Car Wash';
   const branchAddress = branch?.address || sale.branch_address || '';
@@ -24,15 +18,6 @@ export default function ReceiptModal({ saleData, onClose }) {
   const vehicleModel = sale.vehicle_model || '';
 
   function handlePrint() {
-    window.print();
-  }
-
-  async function handleDownloadPdf() {
-    const html = document.documentElement.outerHTML;
-    if (window.electronAPI?.downloadReceiptPdf) {
-      await window.electronAPI.downloadReceiptPdf(html, sale.receipt_number);
-      return;
-    }
     window.print();
   }
 
@@ -157,9 +142,6 @@ export default function ReceiptModal({ saleData, onClose }) {
             onClick={handlePrint}
           >
             🖨️ Print Receipt
-          </button>
-          <button id="download-receipt-btn" className="btn btn-secondary" onClick={handleDownloadPdf}>
-            📥 Download PDF
           </button>
         </div>
       </div>

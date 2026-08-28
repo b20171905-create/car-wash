@@ -20,7 +20,6 @@
     },
     "files": [
       "main.js",
-      "preload.js",
       "app/**/*",
       "build/**/*"
     ],

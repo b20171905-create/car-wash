@@ -1,14 +1,5 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
-const fs = require('fs');
-
-ipcMain.handle('download-receipt-pdf', async (event, html, receiptNumber) => {
-  const pdf = await event.sender.printToPDF({ printBackground: true, pageSize: 'A5' });
-  const safeNumber = String(receiptNumber || 'receipt').replace(/[^a-z0-9_-]/gi, '_');
-  const filePath = path.join(app.getPath('downloads'), `Tiger-Car-Wash-${safeNumber}.pdf`);
-  fs.writeFileSync(filePath, pdf);
-  return filePath;
-});
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -19,7 +10,6 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
