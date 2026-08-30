@@ -176,7 +176,9 @@ databaseReady = (async () => {
           err.message.includes('Duplicate column name')
         ));
       if (!isDuplicateError) {
-        console.warn(`[DB Schema Warning] Statement failed: ${err.message}`);
+        console.error(`[DB Schema Error] Statement failed: ${err.message}`);
+      } else {
+        console.log(`[DB Schema] Skipped duplicate (${err.code || err.errno}): ${err.message}`);
       }
     }
   }
