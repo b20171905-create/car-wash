@@ -28,8 +28,12 @@ function normalizeSql(sql, params) {
 
 function buildMysqlPool() {
   const url = new URL(connectionString);
+  let host = url.hostname;
+  if (host === 'localhost') {
+    host = '127.0.0.1';
+  }
   return mysql.createPool({
-    host: url.hostname,
+    host,
     port: Number(url.port || 3306),
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password || ''),
@@ -156,23 +160,63 @@ databaseReady = (async () => {
   const schema = fs.readFileSync(path.join(__dirname, schemaFile), 'utf8');
   const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
   for (const statement of statements) {
-    await pool.query(`${statement};`);
+    try {
+      await pool.query(`${statement};`);
+    } catch (err) {
+      const isDuplicateError =
+        err.code === 'ER_DUP_KEYNAME' ||
+        err.errno === 1061 ||
+        err.code === 'ER_TABLE_EXISTS_ERROR' ||
+        err.errno === 1050 ||
+        err.code === 'ER_DUP_FIELDNAME' ||
+        err.errno === 1060 ||
+        (err.message && (
+          err.message.includes('Duplicate key name') ||
+          err.message.includes('already exists') ||
+          err.message.includes('Duplicate column name')
+        ));
+      if (!isDuplicateError) {
+        console.warn(`[DB Schema Warning] Statement failed: ${err.message}`);
+      }
+    }
   }
 
   const migrationSql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
   const migrationStatements = migrationSql.split(';').map((statement) => statement.trim()).filter(Boolean);
   for (const statement of migrationStatements) {
-    await pool.query(`${statement};`);
+    try {
+      await pool.query(`${statement};`);
+    } catch (err) {
+      const isDuplicateError =
+        err.code === 'ER_DUP_KEYNAME' ||
+        err.errno === 1061 ||
+        err.code === 'ER_TABLE_EXISTS_ERROR' ||
+        err.errno === 1050 ||
+        err.code === 'ER_DUP_FIELDNAME' ||
+        err.errno === 1060 ||
+        (err.message && (
+          err.message.includes('Duplicate key name') ||
+          err.message.includes('already exists') ||
+          err.message.includes('Duplicate column name')
+        ));
+      if (!isDuplicateError) {
+        console.warn(`[DB Migration Warning] Statement failed: ${err.message}`);
+      }
+    }
   }
 
   if (dbType === 'postgres') {
-    await pool.query(`
-      SELECT setval(
-        'receipt_number_seq',
-        COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
-        COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
-      ) FROM sales;
-    `);
+    try {
+      await pool.query(`
+        SELECT setval(
+          'receipt_number_seq',
+          COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
+          COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
+        ) FROM sales;
+      `);
+    } catch (err) {
+      console.warn(`[DB Sequence Warning]: ${err.message}`);
+    }
   }
 })();
 
