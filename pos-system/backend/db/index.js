@@ -1,4 +1,7 @@
-const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+const { Pool: PgPool } = require('pg');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const connectionString = process.env.DATABASE_URL;
@@ -6,10 +9,13 @@ if (!connectionString) {
   throw new Error('DATABASE_URL must be set before starting the backend.');
 }
 
-const pool = new Pool({
-  connectionString,
-  ssl: connectionString.includes('supabase.com') ? { rejectUnauthorized: false } : undefined,
-});
+function getDbType() {
+  const configuredType = (process.env.DB_CLIENT || '').toLowerCase();
+  if (configuredType === 'mysql' || configuredType === 'postgres') return configuredType;
+  return connectionString.startsWith('mysql') ? 'mysql' : 'postgres';
+}
+
+const dbType = getDbType();
 
 function normalizeSql(sql, params) {
   let replaced = 0;
@@ -20,6 +26,31 @@ function normalizeSql(sql, params) {
   return { sql: normalized, params };
 }
 
+function buildMysqlPool() {
+  const url = new URL(connectionString);
+  return mysql.createPool({
+    host: url.hostname,
+    port: Number(url.port || 3306),
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password || ''),
+    database: decodeURIComponent(url.pathname.replace(/^\/+/, '')),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    decimalNumbers: true,
+    multipleStatements: true,
+  });
+}
+
+function buildPostgresPool() {
+  return new PgPool({
+    connectionString,
+    ssl: connectionString.includes('supabase.com') ? { rejectUnauthorized: false } : undefined,
+  });
+}
+
+const pool = dbType === 'mysql' ? buildMysqlPool() : buildPostgresPool();
+
 let databaseReady = Promise.resolve();
 
 function prepareStatement(sql, executor = pool) {
@@ -27,7 +58,7 @@ function prepareStatement(sql, executor = pool) {
     return {
       all: async () => [],
       get: async () => null,
-      run: async () => ({ changes: 0 })
+      run: async () => ({ changes: 0 }),
     };
   }
 
@@ -35,6 +66,10 @@ function prepareStatement(sql, executor = pool) {
     all: async (...args) => {
       await databaseReady;
       const params = args.flat();
+      if (dbType === 'mysql') {
+        const [rows] = await executor.query(sql, params);
+        return rows;
+      }
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await executor.query(normalizedSql, normalizedParams);
       return result.rows;
@@ -42,6 +77,10 @@ function prepareStatement(sql, executor = pool) {
     get: async (...args) => {
       await databaseReady;
       const params = args.flat();
+      if (dbType === 'mysql') {
+        const [rows] = await executor.query(sql, params);
+        return rows[0] || null;
+      }
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await executor.query(normalizedSql, normalizedParams);
       return result.rows[0] || null;
@@ -49,6 +88,13 @@ function prepareStatement(sql, executor = pool) {
     run: async (...args) => {
       await databaseReady;
       const params = args.flat();
+      if (dbType === 'mysql') {
+        const [result] = await executor.query(sql, params);
+        return {
+          lastInsertRowid: result.insertId ?? null,
+          changes: result.affectedRows || 0,
+        };
+      }
       const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
       const result = await executor.query(normalizedSql, normalizedParams);
       return {
@@ -63,10 +109,29 @@ const db = {
   prepare: prepareStatement,
   query: async (sql, params = []) => {
     await databaseReady;
+    if (dbType === 'mysql') {
+      const [rows] = await pool.query(sql, params);
+      return { rows, fields: [] };
+    }
     return pool.query(sql, params);
   },
   transaction: (callback) => async () => {
     await databaseReady;
+    if (dbType === 'mysql') {
+      const connection = await pool.getConnection();
+      try {
+        await connection.beginTransaction();
+        const result = await callback({ prepare: (sql) => prepareStatement(sql, connection) });
+        await connection.commit();
+        return result;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -85,27 +150,34 @@ const db = {
 };
 
 databaseReady = (async () => {
-  const fs = require('fs');
-  const path = require('path');
-  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  const schemaFile = dbType === 'mysql' ? 'schema.mysql.sql' : 'schema.sql';
+  const migrationFile = dbType === 'mysql' ? 'migrate_vehicle_types.mysql.sql' : 'migrate_vehicle_types.sql';
+
+  const schema = fs.readFileSync(path.join(__dirname, schemaFile), 'utf8');
   const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
   for (const statement of statements) {
-    await pool.query(`${statement};`);
+    if (dbType === 'mysql') {
+      await pool.query(`${statement};`);
+    } else {
+      await pool.query(`${statement};`);
+    }
   }
 
-  const vehicleTypeMigration = fs.readFileSync(path.join(__dirname, 'migrate_vehicle_types.sql'), 'utf8');
-  const migrationStatements = vehicleTypeMigration.split(';').map((statement) => statement.trim()).filter(Boolean);
+  const migrationSql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
+  const migrationStatements = migrationSql.split(';').map((statement) => statement.trim()).filter(Boolean);
   for (const statement of migrationStatements) {
     await pool.query(`${statement};`);
   }
 
-  await pool.query(`
-    SELECT setval(
-      'receipt_number_seq',
-      COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
-      COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
-    ) FROM sales;
-  `);
+  if (dbType === 'postgres') {
+    await pool.query(`
+      SELECT setval(
+        'receipt_number_seq',
+        COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
+        COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
+      ) FROM sales;
+    `);
+  }
 })();
 
 databaseReady.catch((error) => console.error('Database initialization failed:', error));

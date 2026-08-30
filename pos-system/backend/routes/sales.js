@@ -17,6 +17,14 @@ const router = express.Router();
 router.use(requireAuth);
 
 async function nextReceiptNumber() {
+  const dbType = (process.env.DB_CLIENT || '').toLowerCase();
+  const isMysql = dbType === 'mysql' || (process.env.DATABASE_URL || '').startsWith('mysql');
+
+  if (isMysql) {
+    const result = await db.query("SELECT LPAD(COALESCE(MAX(CAST(receipt_number AS UNSIGNED)), 0) + 1, 3, '0') AS receipt_number FROM sales");
+    return result.rows[0].receipt_number;
+  }
+
   const result = await db.query("SELECT LPAD(nextval('receipt_number_seq')::text, 3, '0') AS receipt_number");
   return result.rows[0].receipt_number;
 }

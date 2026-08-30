@@ -1,6 +1,0 @@
-RewriteEngine On
-
-# Let Vite serve real files, and send client-side routes to React.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]

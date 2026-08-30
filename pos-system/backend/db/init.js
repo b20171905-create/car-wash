@@ -26,7 +26,7 @@ const db = require('./index');
     }
 
     // Create branch
-    await db.prepare(`INSERT INTO branches (id, name, address, phone) VALUES ($1, $2, $3, $4)`).run(
+    await db.prepare(`INSERT INTO branches (id, name, address, phone) VALUES (?, ?, ?, ?)`).run(
       branchId,
       'Main Branch',
       'Change this address',
@@ -36,12 +36,11 @@ const db = require('./index');
 
     // Create owner user
     const passwordHash = bcrypt.hashSync(ownerPassword, 10);
-    await db.prepare(`INSERT INTO users (id, branch_id, name, email, password_hash, role, active) VALUES ($1, NULL, $2, $3, $4, $5, true)`).run(
+    await db.prepare(`INSERT INTO users (id, branch_id, name, email, password_hash, role, active) VALUES (?, NULL, ?, ?, ?, 'owner', true)`).run(
       ownerId,
       ownerName,
       ownerEmail,
-      passwordHash,
-      'owner'
+      passwordHash
     );
     console.log(`✓ Created owner account: ${ownerEmail}`);
 
@@ -61,7 +60,7 @@ const db = require('./index');
     ];
 
     for (const [name, duration, price] of services) {
-      await db.prepare(`INSERT INTO services (id, name, description, price, duration_minutes, active) VALUES ($1, $2, $3, $4, $5, true)`).run(
+      await db.prepare(`INSERT INTO services (id, name, description, price, duration_minutes, active) VALUES (?, ?, ?, ?, ?, true)`).run(
         uuid(),
         name,
         '',
