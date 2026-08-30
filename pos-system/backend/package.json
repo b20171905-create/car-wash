@@ -4,7 +4,7 @@
   "description": "Centralized multi-branch POS backend for car wash/service shop",
   "main": "server.js",
   "scripts": {
-    "start": "node db/init.js && node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
     "initdb": "node db/init.js"
   },
