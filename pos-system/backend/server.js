@@ -1,4 +1,6 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
@@ -10,7 +12,31 @@ const usersRoutes = require('./routes/users');
 const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
-app.use(cors());
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      ALLOWED_ORIGINS.length === 0 ||
+      ALLOWED_ORIGINS.includes(origin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive fallback
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '512kb' }));
 
 app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
@@ -21,6 +47,22 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// ---------------------------------------------------------------------------
+// Serve static React frontend files if present in public/
+// ---------------------------------------------------------------------------
+const publicPath = path.join(__dirname, 'public');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+
+  // SPA Fallback for client-side routing
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next();
+    }
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err);
