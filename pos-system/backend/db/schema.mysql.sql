@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS sale_items (
   FOREIGN KEY (service_id) REFERENCES services(id)
 );
 
-CREATE INDEX idx_sales_branch ON sales(branch_id);
-CREATE INDEX idx_sales_created ON sales(created_at);
-CREATE INDEX idx_sale_items_sale ON sale_items(sale_id);
-CREATE INDEX idx_users_active ON users(active);
+CREATE INDEX IF NOT EXISTS idx_sales_branch ON sales(branch_id);
+CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at);
+CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
