@@ -38,7 +38,16 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '512kb' }));
 
-app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+app.get('/health', async (req, res) => {
+  try {
+    await db.databaseReady;
+    await db.prepare('SELECT 1').get();
+    res.json({ ok: true, db: 'connected', time: new Date().toISOString() });
+  } catch (err) {
+    console.error('[Health Check DB Error]:', err.message);
+    res.status(500).json({ ok: false, db: 'error', error: err.message, time: new Date().toISOString() });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/branches', branchRoutes);

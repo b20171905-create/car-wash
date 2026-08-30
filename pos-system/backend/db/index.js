@@ -33,6 +33,7 @@ function buildMysqlPool() {
     host = '127.0.0.1';
   }
   return mysql.createPool({
+    uri: connectionString,
     host,
     port: Number(url.port || 3306),
     user: decodeURIComponent(url.username),
@@ -43,6 +44,9 @@ function buildMysqlPool() {
     queueLimit: 0,
     decimalNumbers: true,
     multipleStatements: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+    connectTimeout: 15000,
   });
 }
 
