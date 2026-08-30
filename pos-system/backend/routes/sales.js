@@ -22,10 +22,16 @@ async function nextReceiptNumber() {
 
   if (isMysql) {
     const result = await db.query("SELECT LPAD(COALESCE(MAX(CAST(receipt_number AS UNSIGNED)), 0) + 1, 3, '0') AS receipt_number FROM sales");
+    if (!result.rows || !result.rows[0]) {
+      throw new Error('Failed to generate receipt number');
+    }
     return result.rows[0].receipt_number;
   }
 
   const result = await db.query("SELECT LPAD(nextval('receipt_number_seq')::text, 3, '0') AS receipt_number");
+  if (!result.rows || !result.rows[0]) {
+    throw new Error('Failed to generate receipt number');
+  }
   return result.rows[0].receipt_number;
 }
 

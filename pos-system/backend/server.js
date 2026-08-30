@@ -21,13 +21,10 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (
-      ALLOWED_ORIGINS.length === 0 ||
-      ALLOWED_ORIGINS.includes(origin)
-    ) {
+    if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    return callback(null, true); // Permissive fallback
+    return callback(new Error('CORS not allowed'));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

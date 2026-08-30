@@ -156,11 +156,7 @@ databaseReady = (async () => {
   const schema = fs.readFileSync(path.join(__dirname, schemaFile), 'utf8');
   const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
   for (const statement of statements) {
-    if (dbType === 'mysql') {
-      await pool.query(`${statement};`);
-    } else {
-      await pool.query(`${statement};`);
-    }
+    await pool.query(`${statement};`);
   }
 
   const migrationSql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
