@@ -35,6 +35,11 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith('/auth/login')) {
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_user');
+      window.location.reload();
+    }
     throw new Error(data.error || data.message || `Request failed (HTTP ${res.status})`);
   }
   return data;
