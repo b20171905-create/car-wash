@@ -77,21 +77,44 @@ router.put('/:id', requireOwner, async (req, res, next) => {
   const existing = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'User not found' });
 
+  // Build dynamic update query
+  const updates = [];
+  const params = [];
+  
+  if (name !== undefined && name !== null) {
+    updates.push('name = ?');
+    params.push(name.trim());
+  }
+  if (email !== undefined && email !== null) {
+    updates.push('email = ?');
+    params.push(email.toLowerCase().trim());
+  }
+  if (profile_photo !== undefined) {
+    updates.push('profile_photo = ?');
+    params.push(profile_photo);
+  }
+  if (role !== undefined && role !== null) {
+    updates.push('role = ?');
+    params.push(role);
+  }
+  if (branch_id !== undefined) {
+    updates.push('branch_id = ?');
+    params.push(branch_id);
+  }
+  
   let passwordHash = existing.password_hash;
   if (password && password.length >= 6) {
     passwordHash = bcrypt.hashSync(password, 10);
+    updates.push('password_hash = ?');
+    params.push(passwordHash);
   }
 
-  await db.prepare(
-    `UPDATE users SET
-       name = COALESCE(?, name),
-      email = COALESCE(?, email),
-      profile_photo = COALESCE(?, profile_photo),
-       role = COALESCE(?, role),
-       branch_id = COALESCE(?, branch_id),
-       password_hash = ?
-     WHERE id = ?`
-  ).run(name, email, profile_photo, role, branch_id, passwordHash, req.params.id);
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  params.push(req.params.id);
+  await db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
   const user = await db.prepare(
     `SELECT u.id, u.name, u.email, u.profile_photo, u.role, u.active, u.branch_id, b.name as branch_name
