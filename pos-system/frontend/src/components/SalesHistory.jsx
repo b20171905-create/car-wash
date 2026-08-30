@@ -230,6 +230,7 @@ export default function SalesHistory({ user }) {
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Date & Time</th>
+                  <th>Billed By</th>
                   {user.role === 'owner' && <th>Admin Actions</th>}
                 </tr>
               </thead>
@@ -255,6 +256,9 @@ export default function SalesHistory({ user }) {
                     <td><span className={`badge ${paymentBadge(s.payment_method)}`}>{s.payment_method === 'upi' ? 'BANK TRANSFER' : s.payment_method?.toUpperCase()}</span></td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                       {new Date(s.created_at).toLocaleString('en-PK')}
+                    </td>
+                    <td>
+                      <span className="badge badge-purple">{s.cashier_name || 'Staff'}</span>
                     </td>
                     {user.role === 'owner' && (
                       <td className="sales-admin-actions">

@@ -128,7 +128,12 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
   });
   await runTxn();
 
-  const sale = await db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
+  const sale = await db.prepare(`
+    SELECT s.*, u.name as cashier_name
+    FROM sales s
+    LEFT JOIN users u ON u.id = s.user_id
+    WHERE s.id = ?
+  `).get(saleId);
 
   res.status(201).json({
     sale,
@@ -311,10 +316,12 @@ router.get('/:id', requireBranchManager, async (req, res, next) => {
   const sale = await db.prepare(`
     SELECT s.*, b.name as branch_name, b.address as branch_address, b.phone as branch_phone,
            c.name as customer_name, c.phone as customer_phone,
-           c.vehicle_number, c.vehicle_model
+           c.vehicle_number, c.vehicle_model,
+           u.name as cashier_name
     FROM sales s
     JOIN branches b ON b.id = s.branch_id
     LEFT JOIN customers c ON c.id = s.customer_id
+    LEFT JOIN users u ON u.id = s.user_id
     WHERE s.id = ?
   `).get(req.params.id);
 

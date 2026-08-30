@@ -38,6 +38,7 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.feed(1);
   r += `Receipt #${sale.receipt_number}\n`;
   r += `${new Date(sale.created_at).toLocaleString()}\n`;
+  if (sale.cashier_name) r += `Billed by: ${sale.cashier_name}\n`;
   r += '--------------------------------\n';
   r += commands.left;
 

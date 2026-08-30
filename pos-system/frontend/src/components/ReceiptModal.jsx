@@ -81,6 +81,10 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
               <span>Time</span>
               <span>{new Date(sale.created_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
+            <div className="receipt-row">
+              <span>Billed By</span>
+              <span style={{ fontWeight: 'bold' }}>{sale.cashier_name || 'Staff'}</span>
+            </div>
 
             {/* Customer info if available */}
             {(customerName || vehicleNumber) && (
