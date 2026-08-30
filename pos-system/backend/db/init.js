@@ -7,8 +7,12 @@ const db = require('./index');
 
 (async () => {
   try {
+    console.log('[INIT] Starting database initialization...');
+    
     // Wait for database schema to be initialized
+    console.log('[INIT] Waiting for database to be ready...');
     await db.databaseReady;
+    console.log('[INIT] Database is ready!');
     
     const branchId = uuid();
     const ownerId = uuid();
@@ -17,18 +21,23 @@ const db = require('./index');
     const ownerPassword = process.env.OWNER_PASSWORD;
     const ownerName = process.env.OWNER_NAME || 'Owner';
 
+    console.log('[INIT] Owner email:', ownerEmail);
+    
     if (!ownerEmail || !ownerPassword) {
       throw new Error('OWNER_EMAIL and OWNER_PASSWORD must be set before initializing the database.');
     }
 
     // Check if owner exists
+    console.log('[INIT] Checking if owner already exists...');
     const existingOwner = await db.prepare(`SELECT id FROM users WHERE role = 'owner' LIMIT 1`).get();
     if (existingOwner) {
-      console.log('Owner already exists. Skipping seed.');
+      console.log('[INIT] Owner already exists. Skipping seed.');
       process.exit(0);
     }
+    console.log('[INIT] No existing owner found, creating new one...');
 
     // Create branch
+    console.log('[INIT] Creating main branch...');
     await db.prepare(`INSERT INTO branches (id, name, address, phone) VALUES (?, ?, ?, ?)`).run(
       branchId,
       'Main Branch',
@@ -38,7 +47,9 @@ const db = require('./index');
     console.log('✓ Created main branch');
 
     // Create owner user
+    console.log('[INIT] Hashing password...');
     const passwordHash = bcrypt.hashSync(ownerPassword, 10);
+    console.log('[INIT] Creating owner user...');
     await db.prepare(`INSERT INTO users (id, branch_id, name, email, password_hash, role, active) VALUES (?, NULL, ?, ?, ?, 'owner', true)`).run(
       ownerId,
       ownerName,
@@ -48,6 +59,7 @@ const db = require('./index');
     console.log(`✓ Created owner account: ${ownerEmail}`);
 
     // Create services
+    console.log('[INIT] Creating services...');
     const services = [
       ['Bike Wash', 15, 150],
       ['Bike Wash YBR', 20, 250],
@@ -76,10 +88,12 @@ const db = require('./index');
     console.log('\n✅ Database seed complete!');
     console.log(`Branch ID: ${branchId}`);
     console.log(`Owner Email: ${ownerEmail}`);
+    console.log('[INIT] Exiting init.js...');
     
     process.exit(0);
   } catch (error) {
     console.error('❌ Database init failed:', error.message);
+    console.error('[INIT] Stack:', error.stack);
     process.exit(1);
   }
 })();
