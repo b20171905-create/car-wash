@@ -7,6 +7,9 @@ const db = require('./index');
 
 (async () => {
   try {
+    // Wait for database schema to be initialized
+    await db.databaseReady;
+    
     const branchId = uuid();
     const ownerId = uuid();
 
