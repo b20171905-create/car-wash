@@ -27,26 +27,55 @@ function normalizeSql(sql, params) {
 }
 
 function buildMysqlPool() {
-  const url = new URL(connectionString);
-  let host = url.hostname;
+  let host = '127.0.0.1';
+  let port = 3306;
+  let user = '';
+  let password = '';
+  let database = '';
+
+  try {
+    const match = connectionString.match(/^mysql:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/]+)(?::(\d+))?\/(.+)$/);
+    if (match) {
+      user = decodeURIComponent(match[1] || '');
+      password = decodeURIComponent(match[2] || '');
+      host = match[3] || '127.0.0.1';
+      port = Number(match[4] || 3306);
+      database = decodeURIComponent(match[5] || '').split('?')[0];
+    } else {
+      const parsed = new URL(connectionString);
+      host = parsed.hostname;
+      port = Number(parsed.port || 3306);
+      user = decodeURIComponent(parsed.username);
+      password = decodeURIComponent(parsed.password || '');
+      database = decodeURIComponent(parsed.pathname.replace(/^\/+/, '')).split('?')[0];
+    }
+  } catch (err) {
+    console.error('[DB Pool Warning] Could not parse connectionString URL:', err.message);
+  }
+
+  // Force IPv4 loopback if hostname is localhost to prevent ::1 IPv6 permission issues
   if (host === 'localhost') {
     host = '127.0.0.1';
   }
+
+  console.log(`[DB Pool] Initializing MySQL pool -> Host: ${host}:${port}, User: ${user}, DB: ${database}`);
+
   return mysql.createPool({
-    uri: connectionString,
     host,
-    port: Number(url.port || 3306),
-    user: decodeURIComponent(url.username),
-    password: decodeURIComponent(url.password || ''),
-    database: decodeURIComponent(url.pathname.replace(/^\/+/, '')),
+    port,
+    user,
+    password,
+    database,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 20,
+    maxIdle: 10,
+    idleTimeout: 60000,
     queueLimit: 0,
     decimalNumbers: true,
     multipleStatements: true,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
-    connectTimeout: 15000,
+    connectTimeout: 20000,
   });
 }
 
@@ -61,6 +90,29 @@ const pool = dbType === 'mysql' ? buildMysqlPool() : buildPostgresPool();
 
 let databaseReady = Promise.resolve();
 
+async function executeWithRetry(fn, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const isConnError =
+        err.code === 'PROTOCOL_CONNECTION_LOST' ||
+        err.code === 'ECONNRESET' ||
+        err.code === 'ETIMEDOUT' ||
+        err.code === 'EPIPE' ||
+        err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR' ||
+        err.fatal === true;
+
+      if (isConnError && attempt < retries) {
+        console.warn(`[DB Retry] Connection issue (${err.code || err.message}). Retrying query (attempt ${attempt}/${retries})...`);
+        await new Promise((r) => setTimeout(r, 200 * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 function prepareStatement(sql, executor = pool) {
   if (sql.trim().toLowerCase().startsWith('pragma')) {
     return {
@@ -72,43 +124,49 @@ function prepareStatement(sql, executor = pool) {
 
   return {
     all: async (...args) => {
-      await databaseReady;
+      await databaseReady.catch(() => {});
       const params = args.flat();
-      if (dbType === 'mysql') {
-        const [rows] = await executor.query(sql, params);
-        return rows;
-      }
-      const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await executor.query(normalizedSql, normalizedParams);
-      return result.rows;
+      return executeWithRetry(async () => {
+        if (dbType === 'mysql') {
+          const [rows] = await executor.query(sql, params);
+          return rows;
+        }
+        const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
+        const result = await executor.query(normalizedSql, normalizedParams);
+        return result.rows;
+      });
     },
     get: async (...args) => {
-      await databaseReady;
+      await databaseReady.catch(() => {});
       const params = args.flat();
-      if (dbType === 'mysql') {
-        const [rows] = await executor.query(sql, params);
-        return rows[0] || null;
-      }
-      const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await executor.query(normalizedSql, normalizedParams);
-      return result.rows[0] || null;
+      return executeWithRetry(async () => {
+        if (dbType === 'mysql') {
+          const [rows] = await executor.query(sql, params);
+          return rows[0] || null;
+        }
+        const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
+        const result = await executor.query(normalizedSql, normalizedParams);
+        return result.rows[0] || null;
+      });
     },
     run: async (...args) => {
-      await databaseReady;
+      await databaseReady.catch(() => {});
       const params = args.flat();
-      if (dbType === 'mysql') {
-        const [result] = await executor.query(sql, params);
+      return executeWithRetry(async () => {
+        if (dbType === 'mysql') {
+          const [result] = await executor.query(sql, params);
+          return {
+            lastInsertRowid: result.insertId ?? null,
+            changes: result.affectedRows || 0,
+          };
+        }
+        const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
+        const result = await executor.query(normalizedSql, normalizedParams);
         return {
-          lastInsertRowid: result.insertId ?? null,
-          changes: result.affectedRows || 0,
+          lastInsertRowid: result.rows?.[0]?.id ?? null,
+          changes: result.rowCount || 0,
         };
-      }
-      const { sql: normalizedSql, params: normalizedParams } = normalizeSql(sql, params);
-      const result = await executor.query(normalizedSql, normalizedParams);
-      return {
-        lastInsertRowid: result.rows?.[0]?.id ?? null,
-        changes: result.rowCount || 0,
-      };
+      });
     },
   };
 }
@@ -116,117 +174,109 @@ function prepareStatement(sql, executor = pool) {
 const db = {
   prepare: prepareStatement,
   query: async (sql, params = []) => {
-    await databaseReady;
-    if (dbType === 'mysql') {
-      const [rows] = await pool.query(sql, params);
-      return { rows, fields: [] };
-    }
-    return pool.query(sql, params);
+    await databaseReady.catch(() => {});
+    return executeWithRetry(async () => {
+      if (dbType === 'mysql') {
+        const [rows] = await pool.query(sql, params);
+        return { rows, fields: [] };
+      }
+      return pool.query(sql, params);
+    });
   },
   transaction: (callback) => async () => {
-    await databaseReady;
-    if (dbType === 'mysql') {
-      const connection = await pool.getConnection();
+    await databaseReady.catch(() => {});
+    return executeWithRetry(async () => {
+      if (dbType === 'mysql') {
+        const connection = await pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const result = await callback({ prepare: (sql) => prepareStatement(sql, connection) });
+          await connection.commit();
+          return result;
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      }
+
+      const client = await pool.connect();
       try {
-        await connection.beginTransaction();
-        const result = await callback({ prepare: (sql) => prepareStatement(sql, connection) });
-        await connection.commit();
+        await client.query('BEGIN');
+        const result = await callback({ prepare: (sql) => prepareStatement(sql, client) });
+        await client.query('COMMIT');
         return result;
       } catch (error) {
-        await connection.rollback();
+        await client.query('ROLLBACK');
         throw error;
       } finally {
-        connection.release();
+        client.release();
       }
-    }
-
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const result = await callback({ prepare: (sql) => prepareStatement(sql, client) });
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   },
   pool,
   close: () => pool.end(),
 };
 
 databaseReady = (async () => {
-  const schemaFile = dbType === 'mysql' ? 'schema.mysql.sql' : 'schema.sql';
-  const migrationFile = dbType === 'mysql' ? 'migrate_vehicle_types.mysql.sql' : 'migrate_vehicle_types.sql';
+  try {
+    const schemaFile = dbType === 'mysql' ? 'schema.mysql.sql' : 'schema.sql';
+    const migrationFile = dbType === 'mysql' ? 'migrate_vehicle_types.mysql.sql' : 'migrate_vehicle_types.sql';
 
-  const schema = fs.readFileSync(path.join(__dirname, schemaFile), 'utf8');
-  const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
-  for (const statement of statements) {
-    try {
-      await pool.query(`${statement};`);
-    } catch (err) {
-      const isDuplicateError =
-        err.code === 'ER_DUP_KEYNAME' ||
-        err.errno === 1061 ||
-        err.code === 'ER_TABLE_EXISTS_ERROR' ||
-        err.errno === 1050 ||
-        err.code === 'ER_DUP_FIELDNAME' ||
-        err.errno === 1060 ||
-        (err.message && (
-          err.message.includes('Duplicate key name') ||
-          err.message.includes('already exists') ||
-          err.message.includes('Duplicate column name')
-        ));
-      if (!isDuplicateError) {
-        console.error(`[DB Schema Error] Statement failed: ${err.message}`);
-      } else {
-        console.log(`[DB Schema] Skipped duplicate (${err.code || err.errno}): ${err.message}`);
+    const schema = fs.readFileSync(path.join(__dirname, schemaFile), 'utf8');
+    const statements = schema.split(';').map((statement) => statement.trim()).filter(Boolean);
+    for (const statement of statements) {
+      try {
+        await pool.query(`${statement};`);
+      } catch (err) {
+        const isDuplicateError =
+          err.code === 'ER_DUP_KEYNAME' ||
+          err.errno === 1061 ||
+          err.code === 'ER_TABLE_EXISTS_ERROR' ||
+          err.errno === 1050 ||
+          err.code === 'ER_DUP_FIELDNAME' ||
+          err.errno === 1060 ||
+          (err.message && (
+            err.message.includes('Duplicate key name') ||
+            err.message.includes('already exists') ||
+            err.message.includes('Duplicate column name')
+          ));
+        if (!isDuplicateError) {
+          console.warn(`[DB Schema Notice] ${err.message}`);
+        }
       }
     }
-  }
 
-  const migrationSql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
-  const migrationStatements = migrationSql.split(';').map((statement) => statement.trim()).filter(Boolean);
-  for (const statement of migrationStatements) {
-    try {
-      await pool.query(`${statement};`);
-    } catch (err) {
-      const isDuplicateError =
-        err.code === 'ER_DUP_KEYNAME' ||
-        err.errno === 1061 ||
-        err.code === 'ER_TABLE_EXISTS_ERROR' ||
-        err.errno === 1050 ||
-        err.code === 'ER_DUP_FIELDNAME' ||
-        err.errno === 1060 ||
-        (err.message && (
-          err.message.includes('Duplicate key name') ||
-          err.message.includes('already exists') ||
-          err.message.includes('Duplicate column name')
-        ));
-      if (!isDuplicateError) {
-        console.warn(`[DB Migration Warning] Statement failed: ${err.message}`);
+    const migrationSql = fs.readFileSync(path.join(__dirname, migrationFile), 'utf8');
+    const migrationStatements = migrationSql.split(';').map((statement) => statement.trim()).filter(Boolean);
+    for (const statement of migrationStatements) {
+      try {
+        await pool.query(`${statement};`);
+      } catch (err) {
+        const isDuplicateError =
+          err.code === 'ER_DUP_KEYNAME' ||
+          err.errno === 1061 ||
+          err.code === 'ER_TABLE_EXISTS_ERROR' ||
+          err.errno === 1050 ||
+          err.code === 'ER_DUP_FIELDNAME' ||
+          err.errno === 1060 ||
+          (err.message && (
+            err.message.includes('Duplicate key name') ||
+            err.message.includes('already exists') ||
+            err.message.includes('Duplicate column name')
+          ));
+        if (!isDuplicateError) {
+          console.warn(`[DB Migration Notice] ${err.message}`);
+        }
       }
     }
-  }
-
-  if (dbType === 'postgres') {
-    try {
-      await pool.query(`
-        SELECT setval(
-          'receipt_number_seq',
-          COALESCE(MAX(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN receipt_number::integer END), 1),
-          COUNT(CASE WHEN receipt_number ~ '^[0-9]{3}$' THEN 1 END) > 0
-        ) FROM sales;
-      `);
-    } catch (err) {
-      console.warn(`[DB Sequence Warning]: ${err.message}`);
-    }
+  } catch (error) {
+    console.warn('[DB Init Notice] Non-fatal schema init error:', error.message);
   }
 })();
 
-databaseReady.catch((error) => console.error('Database initialization failed:', error));
+databaseReady.catch((error) => console.warn('[DB Ready] Non-fatal warning:', error.message));
 
 module.exports = db;
 module.exports.databaseReady = databaseReady;
