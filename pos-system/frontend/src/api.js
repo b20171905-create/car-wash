@@ -10,16 +10,33 @@ function authHeaders() {
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+  } catch (netErr) {
+    throw new Error(`Network error: Unable to reach backend (${netErr.message})`);
+  }
+
+  let data = {};
+  const text = await res.text();
+  if (text && text.trim()) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text.length > 200 ? `Server error (HTTP ${res.status}). Check server logs.` : text };
+    }
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || data.message || `Request failed (HTTP ${res.status})`);
+  }
   return data;
 }
 
@@ -96,7 +113,8 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ receipt_print_payload: receiptPrintPayload }),
       });
-      return res.json();
+      const text = await res.text();
+      return text && text.trim() ? JSON.parse(text) : { printed: res.ok };
     } catch {
       return { printed: false, error: 'Print agent not reachable' };
     }
