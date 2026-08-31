@@ -53,9 +53,34 @@ function buildMysqlPool() {
     console.error('[DB Pool Warning] Could not parse connectionString URL:', err.message);
   }
 
-  // Force IPv4 loopback if hostname is localhost to prevent ::1 IPv6 permission issues
+  const poolOptions = {
+    host,
+    port,
+    user,
+    password,
+    database,
+    waitForConnections: true,
+    connectionLimit: 20,
+    maxIdle: 10,
+    idleTimeout: 60000,
+    queueLimit: 0,
+    decimalNumbers: true,
+    multipleStatements: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+    connectTimeout: 20000,
+  };
+
+  // If host is localhost, check for Unix sockets commonly used on Hostinger shared hosting
   if (host === 'localhost') {
-    host = '127.0.0.1';
+    const socketPaths = ['/var/run/mysqld/mysqld.sock', '/tmp/mysql.sock', '/var/lib/mysql/mysql.sock'];
+    for (const socketPath of socketPaths) {
+      if (fs.existsSync(socketPath)) {
+        console.log(`[DB Pool] Using Hostinger MySQL socket: ${socketPath}`);
+        poolOptions.socketPath = socketPath;
+        break;
+      }
+    }
   }
 
   console.log(`[DB Pool] Initializing MySQL pool -> Host: ${host}:${port}, User: ${user}, DB: ${database}`);
