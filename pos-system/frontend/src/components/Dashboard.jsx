@@ -73,28 +73,27 @@ export default function Dashboard({ user }) {
   const totalToday = summary.reduce((s, b) => s + Number(b.today_revenue), 0);
   const totalSales = summary.reduce((s, b) => s + Number(b.sale_count), 0);
   const todaySales = summary.reduce((s, b) => s + Number(b.today_count || 0), 0);
+  const topBranch = summary.reduce((best, branch) => Number(branch.revenue) > Number(best?.revenue || 0) ? branch : best, summary[0] || { branch_name: 'N/A', revenue: 0 });
+  const bestDay = weeklySales.reduce((best, day) => Number(day.revenue) > Number(best?.revenue || 0) ? day : best, weeklySales[0] || { label: 'N/A', revenue: 0 });
   const dailyBranchSales = summary.map((branch, index) => ({
     ...branch,
     dailyRevenue: Number(branch.today_revenue || 0),
     color: CHART_COLORS[index % CHART_COLORS.length],
   }));
   const dailyRevenueTotal = dailyBranchSales.reduce((total, branch) => total + branch.dailyRevenue, 0);
-  const dailyVehicleSales = [
-    {
-      id: 'bike',
-      branch_name: 'Bike',
-      dailyRevenue: summary.reduce((total, branch) => total + Number(branch.today_bike_revenue || 0), 0),
-      count: summary.reduce((total, branch) => total + Number(branch.today_bike_count || 0), 0),
-      color: '#0f766e',
-    },
-    {
-      id: 'car',
-      branch_name: 'Car',
-      dailyRevenue: summary.reduce((total, branch) => total + Number(branch.today_car_revenue || 0), 0),
-      count: summary.reduce((total, branch) => total + Number(branch.today_car_count || 0), 0),
-      color: '#2563eb',
-    },
+  const vehicleOptions = [
+    { id: 'bike', label: 'Bike', color: '#0f766e' },
+    { id: 'car', label: 'Car', color: '#2563eb' },
+    { id: 'rikshaw', label: 'Rikshaw', color: '#d97706' },
+    { id: 'suv', label: 'SUV', color: '#dc2626' },
+    { id: 'coaster', label: 'Coaster', color: '#7c3aed' },
+    { id: 'truck', label: 'Truck', color: '#0891b2' },
   ];
+  const dailyVehicleSales = vehicleOptions.map((vehicle) => ({
+    ...vehicle,
+    dailyRevenue: summary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_revenue`] || 0), 0),
+    count: summary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
+  }));
   const dailyVehicleRevenueTotal = dailyVehicleSales.reduce((total, vehicle) => total + vehicle.dailyRevenue, 0);
   const weeklyMax = Math.max(...weeklySales.map((day) => day.revenue), 0);
   const monthOptions = Array.from({ length: 12 }, (_, index) => {
@@ -152,6 +151,17 @@ export default function Dashboard({ user }) {
 
   return (
     <div>
+      <div className="dashboard-highlight-row">
+        <div className="highlight-pill">
+          <span className="highlight-emoji">🏆</span>
+          Top branch: <strong>{topBranch.branch_name || 'N/A'}</strong>
+        </div>
+        <div className="highlight-pill">
+          <span className="highlight-emoji">📈</span>
+          Best day: <strong>{bestDay.label || 'N/A'}</strong>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="stats-grid">
         <div className="stat-card">
@@ -207,7 +217,7 @@ export default function Dashboard({ user }) {
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Vehicle Type</h3>
-              <p>Today&apos;s Bike and Car service sales</p>
+              <p>Today&apos;s revenue across all billed vehicle types</p>
             </div>
             {dailyVehicleRevenueTotal === 0 ? (
               <div className="empty-state"><div className="empty-icon">🚗</div><div className="empty-title">No vehicle sales today</div></div>
@@ -218,7 +228,7 @@ export default function Dashboard({ user }) {
                   {dailyVehicleSales.map((vehicle) => (
                     <div className="daily-pie-legend-item" key={vehicle.id}>
                       <span className="daily-pie-swatch" style={{ background: vehicle.color }} />
-                      <span className="daily-pie-branch">{vehicle.branch_name}</span>
+                      <span className="daily-pie-branch">{vehicle.label}</span>
                       <strong>{PKR(vehicle.dailyRevenue)} · {vehicle.count} sales</strong>
                     </div>
                   ))}

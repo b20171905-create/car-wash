@@ -66,6 +66,7 @@ export default function App() {
 
   const allowedNav = NAV_ITEMS.filter((n) => n.roles.includes(user.role));
   const meta = PAGE_META[view] || PAGE_META.checkout;
+  const roleLabel = user.role.replace('_', ' ');
 
   return (
     <div className="app-shell">
@@ -151,7 +152,16 @@ export default function App() {
           </div>
         </header>
         <div className="page-header">
-          <h1 className="page-title">{meta.title}</h1>
+          <div className="page-header-row">
+            <div>
+              <div className="page-kicker">{roleLabel} workspace</div>
+              <h1 className="page-title">{meta.title}</h1>
+            </div>
+            <div className="page-header-badge">
+              <span className="page-header-dot" />
+              {meta.title}
+            </div>
+          </div>
           <p className="page-subtitle">{meta.subtitle}</p>
         </div>
 

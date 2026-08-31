@@ -179,7 +179,7 @@ async function sendPostSaleNotifications(sale, branch, items, customer) {
 router.get('/', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const { from, to, payment_method, receipt_number, customer_name, vehicle, vehicle_type, limit } = req.query;
+  const { from, to, payment_method, receipt_number, customer_name, customer_phone, vehicle, vehicle_type, limit } = req.query;
 
   let query = `
     SELECT s.*, b.name as branch_name,
@@ -200,6 +200,7 @@ router.get('/', requireBranchManager, async (req, res, next) => {
   if (payment_method) { query += ' AND s.payment_method = ?'; params.push(payment_method); }
   if (receipt_number) { query += ' AND s.receipt_number LIKE ?'; params.push(`%${receipt_number}%`); }
   if (customer_name) { query += ' AND c.name LIKE ?'; params.push(`%${customer_name}%`); }
+  if (customer_phone) { query += ' AND c.phone LIKE ?'; params.push(`%${customer_phone}%`); }
   if (vehicle) { query += ' AND (c.vehicle_number LIKE ? OR c.vehicle_model LIKE ?)'; params.push(`%${vehicle}%`, `%${vehicle}%`); }
   if (vehicle_type) { query += ' AND c.vehicle_type = ?'; params.push(vehicle_type); }
   query += ' ORDER BY s.created_at DESC';
@@ -231,12 +232,20 @@ router.get('/summary', requireBranchManager, async (req, res, next) => {
            COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN s.total ELSE 0 END), 0) as today_bike_revenue,
            COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN 1 END) as today_bike_count,
            COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN s.total ELSE 0 END), 0) as today_car_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) as today_car_count
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) as today_car_count,
+           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN s.total ELSE 0 END), 0) as today_rikshaw_revenue,
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN 1 END) as today_rikshaw_count,
+           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN s.total ELSE 0 END), 0) as today_suv_revenue,
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN 1 END) as today_suv_count,
+           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN s.total ELSE 0 END), 0) as today_coaster_revenue,
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN 1 END) as today_coaster_count,
+           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN s.total ELSE 0 END), 0) as today_truck_revenue,
+           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN 1 END) as today_truck_count
     FROM branches b
     LEFT JOIN sales s ON s.branch_id = b.id AND s.status = 'paid'
     LEFT JOIN customers c ON c.id = s.customer_id
   `;
-  const params = [today, today, today, today, today, today];
+  const params = [today, today, today, today, today, today, today, today, today, today, today, today, today, today, today, today];
 
   if (branchId) { query += ' WHERE b.id = ?'; params.push(branchId); }
   query += ' GROUP BY b.id ORDER BY revenue DESC';

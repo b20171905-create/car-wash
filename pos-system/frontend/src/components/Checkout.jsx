@@ -239,6 +239,17 @@ export default function Checkout({ user }) {
             )}
           </div>
 
+          <div className="cart-summary-row">
+            <div className="mini-stat">
+              <span>Total items</span>
+              <strong>{cart.reduce((sum, item) => sum + item.quantity, 0)}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Customer</span>
+              <strong>{customerName || 'Not added'}</strong>
+            </div>
+          </div>
+
           {cart.length === 0 ? (
             <div className="cart-empty">
               <div className="cart-empty-icon">🛒</div>

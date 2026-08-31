@@ -24,34 +24,30 @@ export default function SalesHistory({ user }) {
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [branchFilter, setBranchFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
-  const [searchField, setSearchField] = useState('customer_name');
-  const [searchValue, setSearchValue] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
 
   const resetFilters = () => {
     const emptyValues = {
       singleDate: '',
-      monthFilter: '',
       fromDate: '',
       toDate: '',
       branchFilter: '',
       paymentFilter: '',
-      searchValue: '',
+      customerFilter: '',
       vehicleTypeFilter: '',
     };
 
     setSingleDate(emptyValues.singleDate);
-    setMonthFilter(emptyValues.monthFilter);
     setFromDate(emptyValues.fromDate);
     setToDate(emptyValues.toDate);
     setBranchFilter(emptyValues.branchFilter);
     setPaymentFilter(emptyValues.paymentFilter);
-    setSearchValue(emptyValues.searchValue);
+    setCustomerFilter(emptyValues.customerFilter);
     setVehicleTypeFilter(emptyValues.vehicleTypeFilter);
 
     return emptyValues;
@@ -59,21 +55,15 @@ export default function SalesHistory({ user }) {
 
   function buildSalesParams(filters = {}) {
     const nextSingleDate = filters.singleDate ?? singleDate;
-    const nextMonthFilter = filters.monthFilter ?? monthFilter;
     const nextFromDate = filters.fromDate ?? fromDate;
     const nextToDate = filters.toDate ?? toDate;
     const nextBranchFilter = filters.branchFilter ?? branchFilter;
     const nextPaymentFilter = filters.paymentFilter ?? paymentFilter;
-    const nextSearchValue = filters.searchValue ?? searchValue;
+    const nextCustomerFilter = filters.customerFilter ?? customerFilter;
     const nextVehicleTypeFilter = filters.vehicleTypeFilter ?? vehicleTypeFilter;
-    const nextSearchField = filters.searchField ?? searchField;
 
     const params = {};
-    if (nextMonthFilter) {
-      params.from = `${nextMonthFilter}-01`;
-      const [year, month] = nextMonthFilter.split('-').map(Number);
-      params.to = `${nextMonthFilter}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}T23:59:59`;
-    } else if (nextSingleDate) {
+    if (nextSingleDate) {
       params.from = nextSingleDate;
       params.to = nextSingleDate + 'T23:59:59';
     } else {
@@ -82,15 +72,23 @@ export default function SalesHistory({ user }) {
     }
     if (nextBranchFilter) params.branch_id = nextBranchFilter;
     if (nextPaymentFilter) params.payment_method = nextPaymentFilter;
-    if (nextSearchValue) params[nextSearchField] = nextSearchValue;
+    if (nextCustomerFilter) {
+      params.customer_name = nextCustomerFilter;
+      params.customer_phone = nextCustomerFilter;
+      params.vehicle = nextCustomerFilter;
+      params.receipt_number = nextCustomerFilter;
+    }
     if (nextVehicleTypeFilter) params.vehicle_type = nextVehicleTypeFilter;
     return params;
   }
 
   useEffect(() => {
     api.getBranches().catch(() => []).then(setBranches);
-    loadSales();
   }, []);
+
+  useEffect(() => {
+    loadSales();
+  }, [singleDate, fromDate, toDate, branchFilter, paymentFilter, customerFilter, vehicleTypeFilter]);
 
   async function loadSales(overrides = {}) {
     setLoading(true);
@@ -134,34 +132,25 @@ export default function SalesHistory({ user }) {
     <div className="sales-history-content">
       {/* Filter Bar */}
       <div className="card card-sm sales-history-filters" style={{ marginBottom: 16 }}>
-        <div className="filter-row search-filter-row">
-          <div>
-            <label className="form-label">Search By</label>
-            <select className="form-select" value={searchField} onChange={(e) => setSearchField(e.target.value)}>
-              <option value="customer_name">Customer Name</option>
-              <option value="vehicle">Vehicle ID / Number</option>
-              <option value="receipt_number">Receipt Number</option>
-            </select>
+        <div className="filter-row search-filter-row" style={{ alignItems: 'end' }}>
+          <div className="search-filter-input" style={{ flex: 1, minWidth: 220 }}>
+            <label className="form-label">Search</label>
+            <input
+              className="form-input"
+              placeholder="Customer, contact, vehicle, receipt #"
+              value={customerFilter}
+              onChange={(e) => setCustomerFilter(e.target.value)}
+            />
           </div>
-          <div className="search-filter-input">
-            <label className="form-label">Search Value</label>
-            <input className="form-input" placeholder={`Search ${searchField === 'customer_name' ? 'customer name' : searchField === 'vehicle' ? 'vehicle ID or number' : 'receipt number'}`} value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
-          </div>
-        </div>
-        <div className="filter-row date-filter-row">
           <div>
             <label className="form-label">Date</label>
             <input
               className="form-input"
               type="date"
               value={singleDate}
-              onChange={(e) => { setSingleDate(e.target.value); setMonthFilter(''); setFromDate(''); setToDate(''); }}
+              onChange={(e) => { setSingleDate(e.target.value); setFromDate(''); setToDate(''); }}
               style={{ width: 150 }}
             />
-          </div>
-          <div>
-            <label className="form-label">Month</label>
-            <input className="form-input" type="month" value={monthFilter} onChange={(e) => { setMonthFilter(e.target.value); setSingleDate(''); setFromDate(''); setToDate(''); }} style={{ width: 150 }} />
           </div>
           <div>
             <label className="form-label">From Date</label>
@@ -169,7 +158,7 @@ export default function SalesHistory({ user }) {
               className="form-input"
               type="date"
               value={fromDate}
-              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); setMonthFilter(''); }}
+              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
               style={{ width: 150 }}
             />
           </div>
@@ -179,7 +168,7 @@ export default function SalesHistory({ user }) {
               className="form-input"
               type="date"
               value={toDate}
-              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); setMonthFilter(''); }}
+              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
               style={{ width: 150 }}
             />
           </div>
@@ -211,15 +200,7 @@ export default function SalesHistory({ user }) {
             </select>
           </div>
           <div className="filter-actions">
-            <button id="apply-filter-btn" className="btn btn-primary" onClick={loadSales}>
-              🔍 Apply
-            </button>
-          </div>
-          <div className="filter-actions">
-            <button className="btn btn-ghost" onClick={() => {
-              const emptyValues = resetFilters();
-              loadSales(emptyValues);
-            }}>
+            <button className="btn btn-ghost" onClick={() => resetFilters()}>
               ✕ Clear
             </button>
           </div>
@@ -267,6 +248,7 @@ export default function SalesHistory({ user }) {
                   <th>Receipt #</th>
                   {user.role === 'owner' && <th>Branch</th>}
                   <th>Customer</th>
+                  <th>Contact</th>
                   <th>Type</th>
                   <th>Vehicle</th>
                   <th>Total</th>
@@ -285,6 +267,9 @@ export default function SalesHistory({ user }) {
                     </td>
                     {user.role === 'owner' && <td>{s.branch_name}</td>}
                     <td>{s.customer_name || <span style={{ color: 'var(--text-dim)' }}>Walk-in</span>}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                      {s.customer_phone || <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                    </td>
                     <td>
                       {s.vehicle_type ? s.vehicle_type.replace('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : <span style={{ color: 'var(--text-dim)' }}>—</span>}
                     </td>

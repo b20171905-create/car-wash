@@ -50,12 +50,20 @@ router.get('/branch', async (req, res, next) => {
       COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN s.total ELSE 0 END), 0) AS today_bike_revenue,
       COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN 1 END) AS today_bike_count,
       COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN s.total ELSE 0 END), 0) AS today_car_revenue,
-      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) AS today_car_count
+      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) AS today_car_count,
+      COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN s.total ELSE 0 END), 0) AS today_rikshaw_revenue,
+      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN 1 END) AS today_rikshaw_count,
+      COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN s.total ELSE 0 END), 0) AS today_suv_revenue,
+      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN 1 END) AS today_suv_count,
+      COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN s.total ELSE 0 END), 0) AS today_coaster_revenue,
+      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN 1 END) AS today_coaster_count,
+      COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN s.total ELSE 0 END), 0) AS today_truck_revenue,
+      COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN 1 END) AS today_truck_count
     FROM branches b
     LEFT JOIN sales s ON s.branch_id = b.id AND s.status = 'paid'
     LEFT JOIN customers c ON c.id = s.customer_id
   `;
-  const params = [today, today, today, today, today, today];
+  const params = [today, today, today, today, today, today, today, today, today, today, today, today, today, today, today, today];
 
   // Hard WHERE clause — branch_manager can NEVER see other branches
   if (branchId) {

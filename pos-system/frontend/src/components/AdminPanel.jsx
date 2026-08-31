@@ -278,6 +278,7 @@ function UsersTab() {
   const [users, setUsers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState('all');
   const [form, setForm] = useState({ name: '', email: '', password: '', profile_photo: '', role: 'cashier', branch_id: '' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -286,6 +287,10 @@ function UsersTab() {
     api.getUsers().then(setUsers).catch(() => {});
     api.getBranches().then(setBranches).catch(() => {});
   }, []);
+
+  const filteredUsers = selectedBranchId === 'all'
+    ? users
+    : users.filter((u) => String(u.branch_id ?? '') === String(selectedBranchId));
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -334,12 +339,28 @@ function UsersTab() {
     <div>
       <div className="section-actions">
         <div>
-          <div className="section-title">Users ({users.length})</div>
+          <div className="section-title">Users ({filteredUsers.length})</div>
           <p style={{ margin: 0 }}>Manage staff access across all branches</p>
         </div>
-        <button id="add-user-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Cancel' : '+ Add User'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 180 }}>
+            <label className="form-label" htmlFor="user-branch-filter" style={{ marginBottom: 6 }}>Filter by Branch</label>
+            <select
+              id="user-branch-filter"
+              className="form-select"
+              value={selectedBranchId}
+              onChange={(e) => setSelectedBranchId(e.target.value)}
+            >
+              <option value="all">All branches</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>{branch.name}</option>
+              ))}
+            </select>
+          </div>
+          <button id="add-user-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
+            {showForm ? '✕ Cancel' : '+ Add User'}
+          </button>
+        </div>
       </div>
 
       {msg && <div className={`status-msg ${msg.type}`} style={{ marginBottom: 14 }}>{msg.text}</div>}
@@ -425,8 +446,8 @@ function UsersTab() {
       )}
 
       <div className="card">
-        {users.length === 0 ? (
-          <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No users yet</div></div>
+        {filteredUsers.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">👥</div><div className="empty-title">No users found for this branch</div></div>
         ) : (
           <div className="table-wrap">
             <table>
@@ -434,7 +455,7 @@ function UsersTab() {
                 <tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Created</th><th>Actions</th></tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {filteredUsers.map((u) => (
                   <tr key={u.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
