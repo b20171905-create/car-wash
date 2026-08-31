@@ -53,10 +53,7 @@ function buildMysqlPool() {
     console.error('[DB Pool Warning] Could not parse connectionString URL:', err.message);
   }
 
-  // Force IPv4 loopback if hostname is localhost to prevent ::1 IPv6 permission issues
-  if (host === 'localhost') {
-    host = '127.0.0.1';
-  }
+  // Use hostname from DATABASE_URL (localhost / 127.0.0.1 / remote host)
 
   console.log(`[DB Pool] Initializing MySQL pool -> Host: ${host}:${port}, User: ${user}, DB: ${database}`);
 
