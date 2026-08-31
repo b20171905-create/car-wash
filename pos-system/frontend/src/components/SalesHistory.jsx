@@ -34,39 +34,67 @@ export default function SalesHistory({ user }) {
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
 
   const resetFilters = () => {
-    setSingleDate('');
-    setMonthFilter('');
-    setFromDate('');
-    setToDate('');
-    setBranchFilter('');
-    setPaymentFilter('');
-    setSearchValue('');
-    setVehicleTypeFilter('');
+    const emptyValues = {
+      singleDate: '',
+      monthFilter: '',
+      fromDate: '',
+      toDate: '',
+      branchFilter: '',
+      paymentFilter: '',
+      searchValue: '',
+      vehicleTypeFilter: '',
+    };
+
+    setSingleDate(emptyValues.singleDate);
+    setMonthFilter(emptyValues.monthFilter);
+    setFromDate(emptyValues.fromDate);
+    setToDate(emptyValues.toDate);
+    setBranchFilter(emptyValues.branchFilter);
+    setPaymentFilter(emptyValues.paymentFilter);
+    setSearchValue(emptyValues.searchValue);
+    setVehicleTypeFilter(emptyValues.vehicleTypeFilter);
+
+    return emptyValues;
   };
+
+  function buildSalesParams(filters = {}) {
+    const nextSingleDate = filters.singleDate ?? singleDate;
+    const nextMonthFilter = filters.monthFilter ?? monthFilter;
+    const nextFromDate = filters.fromDate ?? fromDate;
+    const nextToDate = filters.toDate ?? toDate;
+    const nextBranchFilter = filters.branchFilter ?? branchFilter;
+    const nextPaymentFilter = filters.paymentFilter ?? paymentFilter;
+    const nextSearchValue = filters.searchValue ?? searchValue;
+    const nextVehicleTypeFilter = filters.vehicleTypeFilter ?? vehicleTypeFilter;
+    const nextSearchField = filters.searchField ?? searchField;
+
+    const params = {};
+    if (nextMonthFilter) {
+      params.from = `${nextMonthFilter}-01`;
+      const [year, month] = nextMonthFilter.split('-').map(Number);
+      params.to = `${nextMonthFilter}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}T23:59:59`;
+    } else if (nextSingleDate) {
+      params.from = nextSingleDate;
+      params.to = nextSingleDate + 'T23:59:59';
+    } else {
+      if (nextFromDate) params.from = nextFromDate;
+      if (nextToDate) params.to = nextToDate + 'T23:59:59';
+    }
+    if (nextBranchFilter) params.branch_id = nextBranchFilter;
+    if (nextPaymentFilter) params.payment_method = nextPaymentFilter;
+    if (nextSearchValue) params[nextSearchField] = nextSearchValue;
+    if (nextVehicleTypeFilter) params.vehicle_type = nextVehicleTypeFilter;
+    return params;
+  }
 
   useEffect(() => {
     api.getBranches().catch(() => []).then(setBranches);
     loadSales();
   }, []);
 
-  async function loadSales() {
+  async function loadSales(overrides = {}) {
     setLoading(true);
-    const params = {};
-    if (monthFilter) {
-      params.from = `${monthFilter}-01`;
-      const [year, month] = monthFilter.split('-').map(Number);
-      params.to = `${monthFilter}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}T23:59:59`;
-    } else if (singleDate) {
-      params.from = singleDate;
-      params.to = singleDate + 'T23:59:59';
-    } else {
-      if (fromDate) params.from = fromDate;
-      if (toDate) params.to = toDate + 'T23:59:59';
-    }
-    if (branchFilter) params.branch_id = branchFilter;
-    if (paymentFilter) params.payment_method = paymentFilter;
-    if (searchValue) params[searchField] = searchValue;
-    if (vehicleTypeFilter) params.vehicle_type = vehicleTypeFilter;
+    const params = buildSalesParams(overrides);
     const data = await api.getSales(params).catch(() => []);
     setSales(data);
     setLoading(false);
@@ -188,7 +216,10 @@ export default function SalesHistory({ user }) {
             </button>
           </div>
           <div className="filter-actions">
-            <button className="btn btn-ghost" onClick={() => { resetFilters(); setTimeout(loadSales, 0); }}>
+            <button className="btn btn-ghost" onClick={() => {
+              const emptyValues = resetFilters();
+              loadSales(emptyValues);
+            }}>
               ✕ Clear
             </button>
           </div>
