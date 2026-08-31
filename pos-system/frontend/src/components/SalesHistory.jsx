@@ -285,7 +285,13 @@ export default function SalesHistory({ user }) {
                     </td>
                     {user.role === 'owner' && (
                       <td className="sales-admin-actions">
-                        <div className="action-menu">
+                        <div
+                          className="action-menu"
+                          onMouseEnter={() => setOpenActionId(s.id)}
+                          onMouseLeave={() => setOpenActionId((current) => current === s.id ? null : current)}
+                          onFocus={() => setOpenActionId(s.id)}
+                          onBlur={() => setOpenActionId((current) => current === s.id ? null : current)}
+                        >
                           <button
                             className="action-menu-trigger"
                             aria-label={`Actions for receipt ${s.receipt_number}`}
