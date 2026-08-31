@@ -4,10 +4,25 @@ const { Pool: PgPool } = require('pg');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-const connectionString = process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error('DATABASE_URL must be set before starting the backend.');
 }
+
+// Defensive cleanup: strip accidental wrapping quotes/whitespace that some
+// panel UIs or copy-pastes introduce — these can silently break both the
+// new URL() parse and the regex fallback below, causing a fallback to
+// localhost with empty credentials.
+connectionString = connectionString.trim().replace(/^['"]|['"]$/g, '');
+
+// One-time diagnostic (no secrets leaked): confirms what actually reached
+// process.env vs. what's shown in the hPanel editor. Safe to remove once
+// the connection is confirmed working.
+console.log(
+  `[DB Config Debug] DATABASE_URL length: ${connectionString.length}, ` +
+  `starts: ${JSON.stringify(connectionString.slice(0, 12))}, ` +
+  `ends: ${JSON.stringify(connectionString.slice(-12))}`
+);
 
 function getDbType() {
   const configuredType = (process.env.DB_CLIENT || '').toLowerCase();
@@ -43,6 +58,7 @@ function buildMysqlPool() {
       password = decodeURIComponent(parsed.password || '');
       database = decodeURIComponent(parsed.pathname.replace(/^\/+/, '')).split('?')[0];
     } catch (e) {
+      console.error(`[DB Config Error] new URL() parse failed: ${e.message}`);
       const match = rawUrl.match(/^mysql:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/]+)(?::(\d+))?\/(.+)$/);
       if (match) {
         user = decodeURIComponent(match[1] || '');
