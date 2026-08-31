@@ -27,7 +27,8 @@ console.log(
 function getDbType() {
   const configuredType = (process.env.DB_CLIENT || '').toLowerCase();
   if (configuredType === 'mysql' || configuredType === 'postgres') return configuredType;
-  return connectionString.startsWith('mysql') ? 'mysql' : 'postgres';
+  const normalizedConnectionString = (connectionString || '').toLowerCase();
+  return normalizedConnectionString.startsWith('mysql') ? 'mysql' : 'postgres';
 }
 
 const dbType = getDbType();
@@ -80,6 +81,7 @@ function buildMysqlPool() {
     user,
     password,
     database,
+    timezone: '+05:00',
     waitForConnections: true,
     connectionLimit: 20,
     maxIdle: 10,
@@ -112,6 +114,7 @@ function buildMysqlPool() {
     user,
     password,
     database,
+    timezone: '+05:00',
     waitForConnections: true,
     connectionLimit: 20,
     maxIdle: 10,
