@@ -5,34 +5,34 @@
 
 /* --- Google Font fallback already loaded via index.html --- */
 :root {
-  --bg: #090d16;
-  --bg2: #121929;
-  --bg3: #1c273e;
-  --surface: rgba(18, 25, 41, 0.88);
-  --surface-hover: #1e2b45;
-  --border: rgba(255, 255, 255, 0.09);
-  --border-active: rgba(45, 212, 191, 0.6);
+  --bg: #f4f7f8;
+  --bg2: #ffffff;
+  --bg3: #e8eef0;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-hover: #f0f7f7;
+  --border: rgba(15, 23, 42, 0.12);
+  --border-active: rgba(20, 184, 166, 0.5);
 
   --teal: #14b8a6;
   --teal-light: #2dd4bf;
   --teal-dark: #0d9488;
-  --teal-glow: rgba(45, 212, 191, 0.22);
+  --teal-glow: rgba(20, 184, 166, 0.25);
 
-  --cyan: #38bdf8;
-  --amber: #fbbf24;
-  --red: #f87171;
-  --green: #4ade80;
-  --purple: #c084fc;
+  --cyan: #06b6d4;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --green: #22c55e;
+  --purple: #a855f7;
 
-  --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --text: #17232b;
+  --text-muted: #60717a;
+  --text-dim: #82919a;
 
   --radius: 12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-teal: 0 0 24px rgba(45, 212, 191, 0.25);
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.1);
+  --shadow-teal: 0 0 24px rgba(20, 184, 166, 0.2);
 
   --sidebar-w: 220px;
   --header-h: 64px;
@@ -242,7 +242,7 @@ p { color: var(--text-muted); font-size: 0.9rem; }
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: rgba(18, 25, 41, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
   width: 100%;
@@ -389,25 +389,11 @@ p { color: var(--text-muted); font-size: 0.9rem; }
 .sales-history-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: calc(100vh - 180px);
 }
 
 .sales-history-summary { order: 1; }
 .sales-history-filters { order: 2; }
-.sales-history-table {
-  order: 3;
-  flex: 1;
-  min-height: 520px;
-  display: flex;
-  flex-direction: column;
-}
-
-.sales-history-table .table-wrap {
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 310px);
-}
+.sales-history-table { order: 3; }
 
 .daily-pie-charts {
   display: grid;
