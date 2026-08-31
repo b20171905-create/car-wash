@@ -27,30 +27,35 @@ function normalizeSql(sql, params) {
 }
 
 function buildMysqlPool() {
-  let host = '127.0.0.1';
+  const rawUrl = connectionString || '';
+  let host = 'localhost';
   let port = 3306;
   let user = '';
   let password = '';
   let database = '';
 
-  try {
-    const match = connectionString.match(/^mysql:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/]+)(?::(\d+))?\/(.+)$/);
-    if (match) {
-      user = decodeURIComponent(match[1] || '');
-      password = decodeURIComponent(match[2] || '');
-      host = match[3] || '127.0.0.1';
-      port = Number(match[4] || 3306);
-      database = decodeURIComponent(match[5] || '').split('?')[0];
-    } else {
-      const parsed = new URL(connectionString);
-      host = parsed.hostname;
+  if (rawUrl) {
+    try {
+      const parsed = new URL(rawUrl);
+      host = parsed.hostname || 'localhost';
       port = Number(parsed.port || 3306);
-      user = decodeURIComponent(parsed.username);
+      user = decodeURIComponent(parsed.username || '');
       password = decodeURIComponent(parsed.password || '');
       database = decodeURIComponent(parsed.pathname.replace(/^\/+/, '')).split('?')[0];
+    } catch (e) {
+      const match = rawUrl.match(/^mysql:\/\/(?:([^:]+)(?::([^@]+))?@)?([^:\/]+)(?::(\d+))?\/(.+)$/);
+      if (match) {
+        user = decodeURIComponent(match[1] || '');
+        password = decodeURIComponent(match[2] || '');
+        host = match[3] || 'localhost';
+        port = Number(match[4] || 3306);
+        database = decodeURIComponent(match[5] || '').split('?')[0];
+      }
     }
-  } catch (err) {
-    console.error('[DB Pool Warning] Could not parse connectionString URL:', err.message);
+  }
+
+  if (!user || !database) {
+    console.error(`[DB Config Error] Could not extract MySQL user/database from DATABASE_URL`);
   }
 
   const poolOptions = {
