@@ -9,6 +9,7 @@ function BranchesTab() {
   const [form, setForm] = useState({ name: '', address: '', phone: '' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [openActionId, setOpenActionId] = useState(null);
 
   useEffect(() => { api.getBranches().then(setBranches).catch(() => {}); }, []);
 
@@ -116,9 +117,29 @@ function BranchesTab() {
                     <td style={{ color: 'var(--text-muted)' }}>{b.address || '—'}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{b.phone || '—'}</td>
                     <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(b.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <button className="btn btn-secondary btn-sm" onClick={() => editBranch(b)}>Edit</button>{' '}
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(b)}>Delete</button>
+                    <td className="sales-admin-actions">
+                      <div
+                        className="action-menu"
+                        onMouseEnter={() => setOpenActionId(b.id)}
+                        onMouseLeave={() => setOpenActionId((current) => current === b.id ? null : current)}
+                        onFocus={() => setOpenActionId(b.id)}
+                        onBlur={() => setOpenActionId((current) => current === b.id ? null : current)}
+                      >
+                        <button
+                          className="action-menu-trigger"
+                          aria-label={`Actions for branch ${b.name}`}
+                          aria-expanded={openActionId === b.id}
+                          onClick={() => setOpenActionId((current) => current === b.id ? null : b.id)}
+                        >
+                          ⋮
+                        </button>
+                        {openActionId === b.id && (
+                          <div className="action-menu-dropdown">
+                            <button onClick={() => { setOpenActionId(null); editBranch(b); }}>✏️ Edit</button>
+                            <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(b); }}>🗑 Delete</button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -139,6 +160,7 @@ function ServicesTab() {
   const [form, setForm] = useState({ name: '', description: '', price: '', active: true });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [openActionId, setOpenActionId] = useState(null);
 
   useEffect(() => {
     api.getServices().then(setServices).catch((err) => setMsg({ type: 'error', text: err.message }));
@@ -257,10 +279,30 @@ function ServicesTab() {
                         {s.active ? '● Active' : '○ Inactive'}
                       </span>
                     </td>
-                    <td>
-                      <button className="btn btn-secondary btn-sm" onClick={() => editService(s)}>Edit</button>{' '}
-                      <button className="btn btn-secondary btn-sm" onClick={() => toggleService(s)}>{s.active ? 'Deactivate' : 'Activate'}</button>{' '}
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteService(s)}>Delete</button>
+                    <td className="sales-admin-actions">
+                      <div
+                        className="action-menu"
+                        onMouseEnter={() => setOpenActionId(s.id)}
+                        onMouseLeave={() => setOpenActionId((current) => current === s.id ? null : current)}
+                        onFocus={() => setOpenActionId(s.id)}
+                        onBlur={() => setOpenActionId((current) => current === s.id ? null : current)}
+                      >
+                        <button
+                          className="action-menu-trigger"
+                          aria-label={`Actions for service ${s.name}`}
+                          aria-expanded={openActionId === s.id}
+                          onClick={() => setOpenActionId((current) => current === s.id ? null : s.id)}
+                        >
+                          ⋮
+                        </button>
+                        {openActionId === s.id && (
+                          <div className="action-menu-dropdown">
+                            <button onClick={() => { setOpenActionId(null); editService(s); }}>✏️ Edit</button>
+                            <button onClick={() => { setOpenActionId(null); toggleService(s); }}>{s.active ? '⏸ Deactivate' : '▶ Activate'}</button>
+                            <button className="danger" onClick={() => { setOpenActionId(null); deleteService(s); }}>🗑 Delete</button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -282,6 +324,7 @@ function UsersTab() {
   const [form, setForm] = useState({ name: '', email: '', password: '', profile_photo: '', role: 'cashier', branch_id: '' });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [openActionId, setOpenActionId] = useState(null);
 
   useEffect(() => {
     api.getUsers().then(setUsers).catch(() => {});
@@ -469,13 +512,29 @@ function UsersTab() {
                     <td><span className={`badge ${roleBadge(u.role)}`}>{u.role.replace('_', ' ')}</span></td>
                     <td>{u.branch_name || <span style={{ color: 'var(--text-dim)' }}>All branches</span>}</td>
                     <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(u.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handlePasswordReset(u)}>
-                        Reset password
-                      </button>{' '}
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u)}>
-                        🗑
-                      </button>
+                    <td className="sales-admin-actions">
+                      <div
+                        className="action-menu"
+                        onMouseEnter={() => setOpenActionId(u.id)}
+                        onMouseLeave={() => setOpenActionId((current) => current === u.id ? null : current)}
+                        onFocus={() => setOpenActionId(u.id)}
+                        onBlur={() => setOpenActionId((current) => current === u.id ? null : current)}
+                      >
+                        <button
+                          className="action-menu-trigger"
+                          aria-label={`Actions for user ${u.name}`}
+                          aria-expanded={openActionId === u.id}
+                          onClick={() => setOpenActionId((current) => current === u.id ? null : u.id)}
+                        >
+                          ⋮
+                        </button>
+                        {openActionId === u.id && (
+                          <div className="action-menu-dropdown">
+                            <button onClick={() => { setOpenActionId(null); handlePasswordReset(u); }}>🔐 Reset password</button>
+                            <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(u); }}>🗑 Delete</button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
