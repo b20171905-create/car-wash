@@ -127,6 +127,16 @@ p { color: var(--text-muted); font-size: 0.9rem; }
   font-weight: 400;
 }
 
+.top-bar .brand-name,
+.top-bar .brand-tagline,
+.top-bar .sidebar-toggle-label,
+.top-bar .account-menu-trigger,
+.top-bar .user-name,
+.top-bar .user-role,
+.top-bar .account-menu-chevron {
+  color: var(--text);
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 12px 10px;
@@ -242,7 +252,7 @@ p { color: var(--text-muted); font-size: 0.9rem; }
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(8, 18, 24, 0.92);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
   width: 100%;
@@ -269,15 +279,16 @@ p { color: var(--text-muted); font-size: 0.9rem; }
 }
 
 .account-menu-trigger {
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
+  background: rgba(17, 27, 34, 0.9);
   cursor: pointer;
-  color: inherit;
+  color: var(--text);
 }
 
 .account-menu-trigger:hover,
 .account-menu-trigger[aria-expanded="true"] {
   border-color: var(--border-active);
-  background: var(--surface-hover);
+  background: rgba(19, 38, 45, 0.96);
 }
 
 .account-menu-chevron {
@@ -292,7 +303,7 @@ p { color: var(--text-muted); font-size: 0.9rem; }
   right: 0;
   min-width: 140px;
   padding: 6px;
-  background: var(--bg2);
+  background: rgba(8, 18, 24, 0.98);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: var(--shadow);
