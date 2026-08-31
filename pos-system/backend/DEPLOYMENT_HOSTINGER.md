@@ -6,8 +6,8 @@
 - Log in to Hostinger control panel
 - Go to **Databases** section
 - Create a new MySQL database with:
-  - Database name: `u715178331_tcw_database`
-  - Username: `u715178331_tcw_service`
+  - Database name: `u715178431_tcw_database`
+  - Username: `u715178431_tcw_services`
   - Password: Your secure password (will be URL-encoded in connection string)
   - Host: `localhost` (standard for Hostinger shared hosting)
 
@@ -19,7 +19,7 @@ Set these in **Hostinger Dashboard → Websites → Web Apps → Environment var
 PORT=4000
 NODE_ENV=PRODUCTION
 DB_CLIENT=MYSQL
-DATABASE_URL=mysql://u715178331_tcw_service:password%40123@localhost:3306/u715178331_tcw_database
+DATABASE_URL=mysql://u715178431_tcw_services:tcw%401122@localhost:3306/u715178431_tcw_database
 JWT_SECRET=YOUR_LONG_SECURE_SECRET_HERE
 OWNER_NAME=Hammad Khan
 OWNER_EMAIL=tigercarwash.com
