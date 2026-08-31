@@ -25,13 +25,24 @@ export default function SalesHistory({ user }) {
   // Filters
   const [singleDate, setSingleDate] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
-  const [fromDate, setFromDate] = useState(() => `${localDateString().slice(0, 8)}01`);
-  const [toDate, setToDate] = useState(() => localDateString());
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [branchFilter, setBranchFilter] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [searchField, setSearchField] = useState('customer_name');
   const [searchValue, setSearchValue] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
+
+  const resetFilters = () => {
+    setSingleDate('');
+    setMonthFilter('');
+    setFromDate('');
+    setToDate('');
+    setBranchFilter('');
+    setPaymentFilter('');
+    setSearchValue('');
+    setVehicleTypeFilter('');
+  };
 
   useEffect(() => {
     api.getBranches().catch(() => []).then(setBranches);
@@ -177,7 +188,7 @@ export default function SalesHistory({ user }) {
             </button>
           </div>
           <div className="filter-actions">
-            <button className="btn btn-ghost" onClick={() => { setSingleDate(''); setMonthFilter(''); setFromDate(''); setToDate(''); setBranchFilter(''); setPaymentFilter(''); setSearchValue(''); setVehicleTypeFilter(''); setTimeout(loadSales, 0); }}>
+            <button className="btn btn-ghost" onClick={() => { resetFilters(); setTimeout(loadSales, 0); }}>
               ✕ Clear
             </button>
           </div>
