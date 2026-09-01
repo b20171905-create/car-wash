@@ -31,6 +31,7 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
   const branchAddress = branch?.address || sale.branch_address || '';
   const branchPhone = branch?.phone || sale.branch_phone || '';
   const customerName = sale.customer_name || '';
+  const cashierName = sale.cashier_name || sale.user_name || sale.created_by_name || '';
   const vehicleNumber = sale.vehicle_number || '';
   const vehicleModel = sale.vehicle_model || '';
 
@@ -86,13 +87,19 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
             </div>
 
             {/* Customer info if available */}
-            {(customerName || vehicleNumber) && (
+            {(customerName || cashierName || vehicleNumber) && (
               <>
                 <div className="receipt-divider" />
                 {customerName && (
                   <div className="receipt-row">
                     <span>Customer</span>
                     <span>{customerName}</span>
+                  </div>
+                )}
+                {cashierName && (
+                  <div className="receipt-row">
+                    <span>Served By</span>
+                    <span>{cashierName}</span>
                   </div>
                 )}
                 {vehicleNumber && (

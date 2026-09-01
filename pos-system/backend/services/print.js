@@ -38,6 +38,8 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.feed(1);
   r += `Receipt #${sale.receipt_number}\n`;
   r += `${new Date(sale.created_at).toLocaleString()}\n`;
+  const staffName = sale.cashier_name || sale.user_name || sale.created_by_name || 'Staff';
+  if (staffName) r += `Served By: ${staffName}\n`;
   r += '--------------------------------\n';
   r += commands.left;
 

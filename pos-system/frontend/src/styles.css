@@ -1804,11 +1804,40 @@ tr:hover td { background: var(--surface); }
   .daily-pie-layout { flex-direction: column; align-items: center; gap: 16px; }
   .daily-pie-chart { width: min(160px, 70vw); height: min(160px, 70vw); }
   .daily-pie-legend { min-width: 0; width: 100%; }
-  .weekly-bar-chart { gap: 8px; height: 240px; min-width: 480px; }
+  .weekly-bar-chart { gap: 8px; height: 240px; min-width: 0; width: 100%; }
   .weekly-bar-value { font-size: 0.6rem; }
-  .yearly-bar-chart { min-width: 720px; }
+  .yearly-bar-chart { min-width: 0; width: 100%; }
   .page-title { font-size: 1.3rem; }
   .page-subtitle { font-size: 0.8rem; }
+
+  .sales-history-filters .filter-row,
+  .sales-history-filters .search-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sales-history-filters .filter-row > div,
+  .sales-history-filters .search-filter-input {
+    width: 100%;
+    min-width: 0;
+  }
+  .sales-history-filters .form-input,
+  .sales-history-filters .form-select,
+  .sales-history-filters .search-filter-input .form-input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .sales-history-filters [style*="display: flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .sales-history-summary {
+    flex-direction: column;
+  }
+  .sales-history-summary > .card {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
