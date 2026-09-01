@@ -101,6 +101,8 @@ export default function SalesHistory({ user }) {
   }
 
   async function handleReceiptAction(saleId, action = null) {
+    if (reprinting && reprinting === saleId) return;
+
     setReprinting(saleId);
     try {
       const data = await api.getSale(saleId);
@@ -145,26 +147,24 @@ export default function SalesHistory({ user }) {
             />
           </div>
           <div>
-            <label className="form-label">Date Range</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                className="form-input"
-                type="date"
-                value={fromDate}
-                onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
-                style={{ width: 150 }}
-                aria-label="From date"
-              />
-              <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>to</span>
-              <input
-                className="form-input"
-                type="date"
-                value={toDate}
-                onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
-                style={{ width: 150 }}
-                aria-label="To date"
-              />
-            </div>
+            <label className="form-label">From Date</label>
+            <input
+              className="form-input"
+              type="date"
+              value={fromDate}
+              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
+              style={{ width: 150 }}
+            />
+          </div>
+          <div>
+            <label className="form-label">To Date</label>
+            <input
+              className="form-input"
+              type="date"
+              value={toDate}
+              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
+              style={{ width: 150 }}
+            />
           </div>
           {user.role === 'owner' && (
             <div>
@@ -296,9 +296,15 @@ export default function SalesHistory({ user }) {
                           </button>
                           {openActionId === s.id && (
                             <div className="action-menu-dropdown">
-                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }}>👁 Preview</button>
-                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'download'); }}>📥 Download</button>
-                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }}>🖨️ Print</button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }} disabled={reprinting === s.id}>
+                                {reprinting === s.id ? '⏳ Loading...' : '👁 Preview'}
+                              </button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'download'); }} disabled={reprinting === s.id}>
+                                {reprinting === s.id ? '⏳ Loading...' : '📥 Download'}
+                              </button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }} disabled={reprinting === s.id}>
+                                {reprinting === s.id ? '⏳ Loading...' : '🖨️ Print'}
+                              </button>
                               <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(s); }}>🗑 Delete</button>
                             </div>
                           )}

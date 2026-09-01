@@ -9,11 +9,14 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let res;
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders(),
@@ -21,7 +24,12 @@ async function request(path, options = {}) {
       },
     });
   } catch (netErr) {
+    if (netErr?.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000} seconds.`);
+    }
     throw new Error(`Network error: Unable to reach backend (${netErr.message})`);
+  } finally {
+    clearTimeout(timer);
   }
 
   let data = {};

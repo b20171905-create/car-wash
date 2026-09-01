@@ -1529,7 +1529,7 @@ tr:hover td { background: var(--surface); }
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .filter-row + .filter-row {
@@ -1537,7 +1537,12 @@ tr:hover td { background: var(--surface); }
 }
 
 .search-filter-input {
-  flex: 1 1 260px;
+  flex: 0 0 300px;
+  min-width: 220px;
+}
+
+.filter-row > div {
+  flex: 0 0 auto;
 }
 
 .search-filter-input .form-input {
@@ -1550,13 +1555,25 @@ tr:hover td { background: var(--surface); }
 
 .filter-bar .form-select,
 .filter-bar .form-input {
-  width: auto;
-  min-width: 140px;
+  width: 150px;
+  min-width: 150px;
   font-size: 0.83rem;
   padding: 8px 12px;
 }
 
-.filter-bar .form-select { min-width: 160px; }
+.filter-bar .form-select { min-width: 170px; }
+
+.sales-history-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: nowrap;
+}
+
+.sales-history-summary > .card {
+  flex: 0 0 260px;
+  min-width: 220px;
+}
 
 /* ── Empty State ──────────────────────────────────────── */
 .empty-state {
