@@ -179,7 +179,7 @@ async function sendPostSaleNotifications(sale, branch, items, customer) {
 router.get('/', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const { from, to, payment_method, receipt_number, customer_name, customer_phone, vehicle, vehicle_type, limit } = req.query;
+  const { from, to, payment_method, receipt_number, customer_name, customer_phone, vehicle, vehicle_type, search, limit } = req.query;
 
   let query = `
     SELECT s.*, b.name as branch_name,
@@ -198,10 +198,20 @@ router.get('/', requireBranchManager, async (req, res, next) => {
   if (from) { query += ' AND s.created_at >= ?'; params.push(from); }
   if (to) { query += ' AND s.created_at <= ?'; params.push(to); }
   if (payment_method) { query += ' AND s.payment_method = ?'; params.push(payment_method); }
-  if (receipt_number) { query += ' AND s.receipt_number LIKE ?'; params.push(`%${receipt_number}%`); }
-  if (customer_name) { query += ' AND c.name LIKE ?'; params.push(`%${customer_name}%`); }
-  if (customer_phone) { query += ' AND c.phone LIKE ?'; params.push(`%${customer_phone}%`); }
-  if (vehicle) { query += ' AND (c.vehicle_number LIKE ? OR c.vehicle_model LIKE ?)'; params.push(`%${vehicle}%`, `%${vehicle}%`); }
+
+  const genericSearch = (search ?? customer_name ?? customer_phone ?? vehicle ?? receipt_number)?.toString().trim();
+  if (genericSearch) {
+    query += ' AND (' +
+      'c.name LIKE ? OR ' +
+      'c.phone LIKE ? OR ' +
+      'c.vehicle_number LIKE ? OR ' +
+      'c.vehicle_model LIKE ? OR ' +
+      's.receipt_number LIKE ?' +
+      ')';
+    const searchTerm = `%${genericSearch}%`;
+    params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+  }
+
   if (vehicle_type) { query += ' AND c.vehicle_type = ?'; params.push(vehicle_type); }
   query += ' ORDER BY s.created_at DESC';
   const parsedLimit = Number.parseInt(limit, 10);

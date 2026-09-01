@@ -1258,7 +1258,12 @@ tr:hover td { background: var(--surface); }
   text-align: center;
 }
 
-.action-menu { position: relative; display: inline-block; }
+.action-menu {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+}
 
 .action-menu-trigger {
   width: 32px;
@@ -1282,9 +1287,9 @@ tr:hover td { background: var(--surface); }
 
 .action-menu-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   right: 0;
-  z-index: 20;
+  z-index: 60;
   min-width: 140px;
   padding: 4px;
   background: var(--bg2);
@@ -1294,7 +1299,8 @@ tr:hover td { background: var(--surface); }
 }
 
 .sales-history-table,
-.sales-history-table .table-wrap {
+.sales-history-table .table-wrap,
+.card .table-wrap {
   overflow: visible;
 }
 
@@ -1721,13 +1727,27 @@ tr:hover td { background: var(--surface); }
 }
 
 @media (max-width: 1024px) {
-  .checkout-layout { grid-template-columns: 1fr; height: auto; }
+  .checkout-layout {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto;
+    min-height: 0;
+  }
+  .checkout-left,
+  .checkout-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    overflow: visible;
+  }
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .main-content {
     margin-left: 0;
     width: 100%;
     max-width: 100%;
+    overflow-x: hidden;
   }
   .services-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
   .sidebar-toggle-btn {
@@ -1754,6 +1774,15 @@ tr:hover td { background: var(--surface); }
 }
 
 @media (max-width: 640px) {
+  .app-shell,
+  .main-content,
+  .page-body,
+  .checkout-layout,
+  .checkout-left,
+  .checkout-right {
+    min-width: 0;
+    overflow-x: hidden;
+  }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
   .payment-methods { grid-template-columns: repeat(2, 1fr); }
   .top-bar { padding: 10px 14px; }

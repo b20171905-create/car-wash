@@ -72,12 +72,7 @@ export default function SalesHistory({ user }) {
     }
     if (nextBranchFilter) params.branch_id = nextBranchFilter;
     if (nextPaymentFilter) params.payment_method = nextPaymentFilter;
-    if (nextCustomerFilter) {
-      params.customer_name = nextCustomerFilter;
-      params.customer_phone = nextCustomerFilter;
-      params.vehicle = nextCustomerFilter;
-      params.receipt_number = nextCustomerFilter;
-    }
+    if (nextCustomerFilter) params.search = nextCustomerFilter;
     if (nextVehicleTypeFilter) params.vehicle_type = nextVehicleTypeFilter;
     return params;
   }
@@ -87,7 +82,11 @@ export default function SalesHistory({ user }) {
   }, []);
 
   useEffect(() => {
-    loadSales();
+    const timer = setTimeout(() => {
+      loadSales();
+    }, 220);
+
+    return () => clearTimeout(timer);
   }, [singleDate, fromDate, toDate, branchFilter, paymentFilter, customerFilter, vehicleTypeFilter]);
 
   async function loadSales(overrides = {}) {
@@ -229,7 +228,7 @@ export default function SalesHistory({ user }) {
 
       {/* Table */}
       <div className="card sales-history-table">
-        {loading ? (
+        {loading && sales.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div className="spinner" style={{ width: 32, height: 32, margin: '0 auto 10px' }} />
             <p>Loading sales…</p>
@@ -241,7 +240,7 @@ export default function SalesHistory({ user }) {
             <div className="empty-desc">Try adjusting your filters</div>
           </div>
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap" style={{ opacity: loading ? 0.75 : 1, transition: 'opacity 0.15s ease' }}>
             <table>
               <thead>
                 <tr>
