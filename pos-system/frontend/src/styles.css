@@ -1864,6 +1864,18 @@ tr:hover td { background: var(--surface); }
     min-width: 0 !important;
     width: 100%;
   }
+  .sales-history-content {
+    min-height: auto;
+  }
+  .sales-history-table {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .sales-history-table .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 480px) {

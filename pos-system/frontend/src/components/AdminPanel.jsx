@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 
+const PK_TIMEZONE = 'Asia/Karachi';
+const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+
 // ── Branches Tab ──────────────────────────────────────────────
 function BranchesTab() {
   const [branches, setBranches] = useState([]);
