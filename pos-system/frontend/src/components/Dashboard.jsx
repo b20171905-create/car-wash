@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
+const PK_TIMEZONE = 'Asia/Karachi';
+const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
 const CHART_COLORS = ['#0f766e', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#65a30d', '#c2410c'];
 
 function pieStops(items, total) {
@@ -41,8 +43,8 @@ export default function Dashboard({ user }) {
         const key = date.toISOString().slice(0, 10);
         return {
           key,
-          label: date.toLocaleDateString('en-PK', { weekday: 'short' }),
-          dateLabel: date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' }),
+          label: date.toLocaleDateString('en-PK', { weekday: 'short', timeZone: PK_TIMEZONE }),
+          dateLabel: date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', timeZone: PK_TIMEZONE }),
           revenue: 0,
           count: 0,
         };
@@ -102,7 +104,7 @@ export default function Dashboard({ user }) {
     date.setMonth(date.getMonth() - index);
     return {
       value: date.toISOString().slice(0, 7),
-      label: date.toLocaleDateString('en-PK', { month: 'long', year: 'numeric' }),
+      label: date.toLocaleDateString('en-PK', { month: 'long', year: 'numeric', timeZone: PK_TIMEZONE }),
     };
   });
   const yearOptions = Array.from({ length: 5 }, (_, index) => String(new Date().getFullYear() - index));
@@ -112,7 +114,7 @@ export default function Dashboard({ user }) {
     const value = yearlySales.find((item) => item.month === monthValue);
     return {
       value: monthValue,
-      label: new Date(`${monthValue}-01T00:00:00Z`).toLocaleDateString('en-PK', { month: 'short' }),
+      label: new Date(`${monthValue}-01T00:00:00Z`).toLocaleDateString('en-PK', { month: 'short', timeZone: PK_TIMEZONE }),
       revenue: Number(value?.revenue || 0),
       count: Number(value?.sale_count || 0),
     };

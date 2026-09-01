@@ -3,6 +3,9 @@ import { api } from '../api';
 import ReceiptModal from './ReceiptModal';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
+const PK_TIMEZONE = 'Asia/Karachi';
+const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const formatPkDateTime = (value, options = {}) => new Date(value).toLocaleString('en-PK', { timeZone: PK_TIMEZONE, ...options });
 
 const PAYMENT_LABELS = { cash: '💵 Cash', card: '💳 Card', upi: '🏦 Bank Transfer', wallet: '👛 Wallet', other: '🔖 Other', '': 'All Methods' };
 
@@ -142,34 +145,26 @@ export default function SalesHistory({ user }) {
             />
           </div>
           <div>
-            <label className="form-label">Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={singleDate}
-              onChange={(e) => { setSingleDate(e.target.value); setFromDate(''); setToDate(''); }}
-              style={{ width: 150 }}
-            />
-          </div>
-          <div>
-            <label className="form-label">From Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={fromDate}
-              onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
-              style={{ width: 150 }}
-            />
-          </div>
-          <div>
-            <label className="form-label">To Date</label>
-            <input
-              className="form-input"
-              type="date"
-              value={toDate}
-              onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
-              style={{ width: 150 }}
-            />
+            <label className="form-label">Date Range</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                className="form-input"
+                type="date"
+                value={fromDate}
+                onChange={(e) => { setFromDate(e.target.value); setSingleDate(''); }}
+                style={{ width: 150 }}
+                aria-label="From date"
+              />
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>to</span>
+              <input
+                className="form-input"
+                type="date"
+                value={toDate}
+                onChange={(e) => { setToDate(e.target.value); setSingleDate(''); }}
+                style={{ width: 150 }}
+                aria-label="To date"
+              />
+            </div>
           </div>
           {user.role === 'owner' && (
             <div>
@@ -209,14 +204,14 @@ export default function SalesHistory({ user }) {
       {/* Summary Row */}
       {!loading && (
         <div className="sales-history-summary" style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 160 }}>
+          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: '0 0 260px', minWidth: 220 }}>
             <span style={{ fontSize: '1.3rem' }}>🧾</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text)' }}>{sales.length}</div>
               <div className="stat-label">Transactions Shown</div>
             </div>
           </div>
-          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, minWidth: 160 }}>
+          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: '0 0 260px', minWidth: 220 }}>
             <span style={{ fontSize: '1.3rem' }}>💰</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--teal-light)' }}>{PKR(totalShown)}</div>
@@ -280,7 +275,7 @@ export default function SalesHistory({ user }) {
                     <td style={{ fontWeight: 700, color: 'var(--text)' }}>{PKR(s.total)}</td>
                     <td><span className={`badge ${paymentBadge(s.payment_method)}`}>{s.payment_method === 'upi' ? 'BANK TRANSFER' : s.payment_method?.toUpperCase()}</span></td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                      {new Date(s.created_at).toLocaleString('en-PK')}
+                      {formatPkDateTime(s.created_at)}
                     </td>
                     {user.role === 'owner' && (
                       <td className="sales-admin-actions">

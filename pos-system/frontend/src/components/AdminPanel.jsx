@@ -116,7 +116,7 @@ function BranchesTab() {
                     <td><strong>{b.name}</strong></td>
                     <td style={{ color: 'var(--text-muted)' }}>{b.address || '—'}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{b.phone || '—'}</td>
-                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(b.created_at).toLocaleDateString()}</td>
+                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{formatPkDate(b.created_at)}</td>
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
@@ -511,7 +511,7 @@ function UsersTab() {
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{u.email}</td>
                     <td><span className={`badge ${roleBadge(u.role)}`}>{u.role.replace('_', ' ')}</span></td>
                     <td>{u.branch_name || <span style={{ color: 'var(--text-dim)' }}>All branches</span>}</td>
-                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{formatPkDate(u.created_at)}</td>
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"

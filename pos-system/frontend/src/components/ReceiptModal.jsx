@@ -3,6 +3,9 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
+const PK_TIMEZONE = 'Asia/Karachi';
+const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const formatPkTime = (value, options = {}) => new Date(value).toLocaleTimeString('en-PK', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit', ...options });
 
 export default function ReceiptModal({ saleData, onClose, adminActions = false, autoAction = null }) {
   const printRef = useRef();
@@ -75,11 +78,11 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
             </div>
             <div className="receipt-row">
               <span>Date</span>
-              <span>{new Date(sale.created_at).toLocaleDateString('en-PK')}</span>
+              <span>{formatPkDate(sale.created_at)}</span>
             </div>
             <div className="receipt-row">
               <span>Time</span>
-              <span>{new Date(sale.created_at).toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>{formatPkTime(sale.created_at)}</span>
             </div>
 
             {/* Customer info if available */}
