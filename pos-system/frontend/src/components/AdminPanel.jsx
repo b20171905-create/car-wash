@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 
 // ── Branches Tab ──────────────────────────────────────────────
@@ -10,6 +10,24 @@ function BranchesTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const closeActionTimerRef = useRef(null);
+
+  const openActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+      closeActionTimerRef.current = null;
+    }
+    setOpenActionId(id);
+  };
+
+  const closeActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+    }
+    closeActionTimerRef.current = setTimeout(() => {
+      setOpenActionId((current) => (current === id ? null : current));
+    }, 180);
+  };
 
   useEffect(() => { api.getBranches().then(setBranches).catch(() => {}); }, []);
 
@@ -120,10 +138,10 @@ function BranchesTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => setOpenActionId(b.id)}
-                        onMouseLeave={() => setOpenActionId((current) => current === b.id ? null : current)}
-                        onFocus={() => setOpenActionId(b.id)}
-                        onBlur={() => setOpenActionId((current) => current === b.id ? null : current)}
+                        onMouseEnter={() => openActionMenu(b.id)}
+                        onMouseLeave={() => closeActionMenu(b.id)}
+                        onFocus={() => openActionMenu(b.id)}
+                        onBlur={() => closeActionMenu(b.id)}
                       >
                         <button
                           className="action-menu-trigger"
@@ -161,6 +179,24 @@ function ServicesTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const closeActionTimerRef = useRef(null);
+
+  const openActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+      closeActionTimerRef.current = null;
+    }
+    setOpenActionId(id);
+  };
+
+  const closeActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+    }
+    closeActionTimerRef.current = setTimeout(() => {
+      setOpenActionId((current) => (current === id ? null : current));
+    }, 180);
+  };
 
   useEffect(() => {
     api.getServices().then(setServices).catch((err) => setMsg({ type: 'error', text: err.message }));
@@ -282,10 +318,10 @@ function ServicesTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => setOpenActionId(s.id)}
-                        onMouseLeave={() => setOpenActionId((current) => current === s.id ? null : current)}
-                        onFocus={() => setOpenActionId(s.id)}
-                        onBlur={() => setOpenActionId((current) => current === s.id ? null : current)}
+                        onMouseEnter={() => openActionMenu(s.id)}
+                        onMouseLeave={() => closeActionMenu(s.id)}
+                        onFocus={() => openActionMenu(s.id)}
+                        onBlur={() => closeActionMenu(s.id)}
                       >
                         <button
                           className="action-menu-trigger"
@@ -325,6 +361,24 @@ function UsersTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const closeActionTimerRef = useRef(null);
+
+  const openActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+      closeActionTimerRef.current = null;
+    }
+    setOpenActionId(id);
+  };
+
+  const closeActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+    }
+    closeActionTimerRef.current = setTimeout(() => {
+      setOpenActionId((current) => (current === id ? null : current));
+    }, 180);
+  };
 
   useEffect(() => {
     api.getUsers().then(setUsers).catch(() => {});
@@ -515,10 +569,10 @@ function UsersTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => setOpenActionId(u.id)}
-                        onMouseLeave={() => setOpenActionId((current) => current === u.id ? null : current)}
-                        onFocus={() => setOpenActionId(u.id)}
-                        onBlur={() => setOpenActionId((current) => current === u.id ? null : current)}
+                        onMouseEnter={() => openActionMenu(u.id)}
+                        onMouseLeave={() => closeActionMenu(u.id)}
+                        onFocus={() => openActionMenu(u.id)}
+                        onBlur={() => closeActionMenu(u.id)}
                       >
                         <button
                           className="action-menu-trigger"

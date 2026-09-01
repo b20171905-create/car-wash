@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import ReceiptModal from './ReceiptModal';
 
@@ -24,6 +24,24 @@ export default function SalesHistory({ user }) {
   const [receiptData, setReceiptData] = useState(null);
   const [receiptAction, setReceiptAction] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const closeActionTimerRef = useRef(null);
+
+  const openActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+      closeActionTimerRef.current = null;
+    }
+    setOpenActionId(id);
+  };
+
+  const closeActionMenu = (id) => {
+    if (closeActionTimerRef.current) {
+      clearTimeout(closeActionTimerRef.current);
+    }
+    closeActionTimerRef.current = setTimeout(() => {
+      setOpenActionId((current) => (current === id ? null : current));
+    }, 180);
+  };
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
@@ -281,10 +299,10 @@ export default function SalesHistory({ user }) {
                       <td className="sales-admin-actions">
                         <div
                           className="action-menu"
-                          onMouseEnter={() => setOpenActionId(s.id)}
-                          onMouseLeave={() => setOpenActionId((current) => current === s.id ? null : current)}
-                          onFocus={() => setOpenActionId(s.id)}
-                          onBlur={() => setOpenActionId((current) => current === s.id ? null : current)}
+                          onMouseEnter={() => openActionMenu(s.id)}
+                          onMouseLeave={() => closeActionMenu(s.id)}
+                          onFocus={() => openActionMenu(s.id)}
+                          onBlur={() => closeActionMenu(s.id)}
                         >
                           <button
                             className="action-menu-trigger"

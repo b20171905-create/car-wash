@@ -1260,9 +1260,17 @@ tr:hover td { background: var(--surface); }
 
 .action-menu {
   position: relative;
-  display: inline-block;
-  padding-bottom: 10px;
-  margin-bottom: -10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 10px 16px;
+  margin-bottom: -14px;
+  z-index: 1;
+}
+
+.action-menu:hover,
+.action-menu:focus-within {
+  z-index: 30;
 }
 
 .action-menu-trigger {
@@ -1287,7 +1295,7 @@ tr:hover td { background: var(--surface); }
 
 .action-menu-dropdown {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   right: 0;
   z-index: 60;
   min-width: 140px;
@@ -1296,6 +1304,7 @@ tr:hover td { background: var(--surface); }
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow);
+  pointer-events: auto;
 }
 
 .sales-history-table,
