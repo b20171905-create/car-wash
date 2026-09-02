@@ -985,6 +985,9 @@ tr:hover td { background: var(--surface); }
   border-radius: 10px;
   width: fit-content;
   margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .tab {
@@ -999,6 +1002,11 @@ tr:hover td { background: var(--surface); }
   font-family: inherit;
   transition: all var(--transition);
   white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
 }
 
 .tab.active {
@@ -1926,6 +1934,19 @@ input:focus {
   .monthly-analysis-heading { flex-direction: column; align-items: flex-start; }
   .yearly-year-select, .monthly-month-select { width: 100%; }
   
+  /* Tabs on tablets */
+  .tabs {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+  }
+  
+  .tab {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    min-height: 40px;
+  }
+  
   /* Better form styling for tablets */
   .form-row, .form-row-3 {
     grid-template-columns: 1fr;
@@ -1973,6 +1994,20 @@ input:focus {
   }
   
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  
+  /* Tabs on mobile */
+  .tabs {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+    padding: 6px;
+  }
+  
+  .tab {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    min-height: 38px;
+  }
   
   /* Admin Panel Responsiveness */
   .section-actions {
@@ -2339,12 +2374,17 @@ input:focus {
     -webkit-overflow-scrolling: touch;
     display: flex;
     gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    padding: 6px;
+    border-radius: 8px;
   }
   
   .tab {
     flex-shrink: 0;
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    min-height: 36px;
   }
 }
 
@@ -2375,6 +2415,19 @@ input:focus {
   .section-title + p {
     font-size: 0.7rem;
     margin: 2px 0 0 0 !important;
+  }
+  
+  /* Tabs on ultra-small screens */
+  .tabs {
+    padding: 4px;
+    gap: 2px;
+    border-radius: 6px;
+  }
+  
+  .tab {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    min-height: 32px;
   }
   
   /* Ultra compact tables */
