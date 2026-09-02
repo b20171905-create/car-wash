@@ -1628,6 +1628,18 @@ input:focus {
 
 .section-title { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 
+.section-actions > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section-actions p {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 /* ── Filter Bar ──────────────────────────────────────── */
 .filter-bar {
   display: flex;
@@ -1962,6 +1974,93 @@ input:focus {
   
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
   
+  /* Admin Panel Responsiveness */
+  .section-actions {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+  
+  .section-actions > div:first-child {
+    width: 100%;
+  }
+  
+  .section-actions .btn {
+    width: 100%;
+  }
+  
+  .section-title {
+    font-size: 0.88rem;
+  }
+  
+  /* Table action menus on mobile */
+  .action-menu {
+    position: relative;
+  }
+  
+  .action-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-width: 140px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .action-menu-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    color: var(--text);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .action-menu-dropdown button:last-child {
+    border-bottom: none;
+  }
+  
+  .action-menu-dropdown button:hover {
+    background: var(--bg3);
+  }
+  
+  .action-menu-dropdown button.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+  
+  /* Better table styling on mobile */
+  table {
+    font-size: 0.75rem;
+  }
+  
+  th, td {
+    padding: 10px 8px;
+  }
+  
+  th {
+    font-size: 0.65rem;
+  }
+  
+  /* Admin form button styling */
+  .card > form > div[style*="display: flex"][style*="gap"] {
+    flex-direction: column !important;
+  }
+  
+  .card > form .btn-sm,
+  .card form .btn-ghost,
+  .card form .btn-primary {
+    width: 100%;
+    margin: 0;
+  }
+  
   .payment-methods { grid-template-columns: repeat(2, 1fr); }
   
   .top-bar { 
@@ -2106,6 +2205,52 @@ input:focus {
   .stat-value { font-size: clamp(1rem, 4vw, 1.4rem); }
   .stat-label { font-size: 0.7rem; }
   
+  /* Admin Panel on Small Mobile */
+  .section-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .section-actions .btn {
+    width: 100%;
+    padding: 12px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .section-title {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+  
+  /* Compact tables on small screens */
+  table {
+    font-size: 0.7rem;
+  }
+  
+  th {
+    padding: 8px 6px;
+    font-size: 0.6rem;
+  }
+  
+  td {
+    padding: 8px 6px;
+  }
+  
+  .action-menu-trigger {
+    padding: 6px 8px;
+    min-width: 28px;
+  }
+  
+  /* Optimize dropdown for small screens */
+  .action-menu-dropdown {
+    min-width: 120px;
+    font-size: 0.8rem;
+  }
+  
+  .action-menu-dropdown button {
+    padding: 8px 10px;
+  }
+  
   .card { 
     padding: 14px 12px; 
     border-radius: var(--radius);
@@ -2212,6 +2357,55 @@ input:focus {
   .stat-value { font-size: 1.1rem; }
   .stat-card { padding: 10px 8px; }
   .card { padding: 10px 8px; }
+  
+  /* Admin Panel on Ultra-Small Screens */
+  .section-actions {
+    gap: 6px;
+  }
+  
+  .section-actions .btn {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .section-title {
+    font-size: 0.8rem;
+  }
+  
+  .section-title + p {
+    font-size: 0.7rem;
+    margin: 2px 0 0 0 !important;
+  }
+  
+  /* Ultra compact tables */
+  table {
+    font-size: 0.65rem;
+  }
+  
+  th {
+    padding: 6px 4px;
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+  }
+  
+  td {
+    padding: 6px 4px;
+  }
+  
+  .action-menu-trigger {
+    min-width: 26px;
+    padding: 4px 6px;
+    font-size: 1rem;
+  }
+  
+  .action-menu-dropdown {
+    min-width: 110px;
+  }
+  
+  .action-menu-dropdown button {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
   
   .page-body { padding: 10px 6px 16px; }
   .page-header { padding: 12px 6px 0; }
