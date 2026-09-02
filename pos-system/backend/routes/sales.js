@@ -74,7 +74,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
     return res.status(403).json({ error: 'Cannot create sale for another branch' });
   }
 
-  const branch = await db.prepare('SELECT * FROM branches WHERE id = ?').get(branch_id);
+  const branch = await db.prepare('SELECT * FROM branches WHERE id = ? AND active = TRUE').get(branch_id);
   if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
   const resolvedItems = await Promise.all(items.map(async (i) => {

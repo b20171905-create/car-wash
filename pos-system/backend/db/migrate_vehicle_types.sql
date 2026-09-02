@@ -1,4 +1,6 @@
 -- Run once in Supabase SQL Editor for an existing database.
+ALTER TABLE branches ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
+
 ALTER TABLE customers
   DROP CONSTRAINT IF EXISTS customers_vehicle_type_check;
 

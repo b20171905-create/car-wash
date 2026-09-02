@@ -70,11 +70,11 @@ function BranchesTab() {
   }
 
   async function handleDelete(branch) {
-    if (!confirm(`Remove branch "${branch.name}"? Only empty branches can be removed.`)) return;
+    if (!confirm(`Archive branch "${branch.name}"? It will be removed from active branch lists, while its sales history is preserved.`)) return;
     try {
       await api.deleteBranch(branch.id);
       setBranches((prev) => prev.filter((item) => item.id !== branch.id));
-      setMsg({ type: 'success', text: `Branch "${branch.name}" removed.` });
+      setMsg({ type: 'success', text: `Branch "${branch.name}" archived.` });
     } catch (err) {
       setMsg({ type: 'error', text: err.message });
     }

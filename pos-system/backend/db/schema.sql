@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS branches (
   name TEXT NOT NULL,
   address TEXT,
   phone TEXT,
+  active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

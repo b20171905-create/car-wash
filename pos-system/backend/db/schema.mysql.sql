@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS branches (
   name VARCHAR(255) NOT NULL,
   address TEXT,
   phone VARCHAR(50),
+  active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
