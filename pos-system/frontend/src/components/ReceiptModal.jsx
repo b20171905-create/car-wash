@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 const PK_TIMEZONE = 'Asia/Karachi';
@@ -10,6 +11,7 @@ const formatPkTime = (value, options = {}) => new Date(value).toLocaleTimeString
 export default function ReceiptModal({ saleData, onClose, adminActions = false, autoAction = null }) {
   const printRef = useRef();
   const [downloadError, setDownloadError] = useState('');
+  const [printState, setPrintState] = useState({ loading: false, error: '' });
 
   const sale = saleData?.sale;
 
@@ -35,8 +37,16 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
   const vehicleNumber = sale.vehicle_number || '';
   const vehicleModel = sale.vehicle_model || '';
 
-  function handlePrint() {
-    window.print();
+  async function handlePrint() {
+    if (printState.loading) return;
+    setPrintState({ loading: true, error: '' });
+    const result = await api.printThermal(saleData.receipt_print_payload);
+    if (result.printed) {
+      await api.markPrinted(sale.id);
+      setPrintState({ loading: false, error: '' });
+      return;
+    }
+    setPrintState({ loading: false, error: result.error || 'Could not print receipt.' });
   }
 
   async function handleDownload() {
@@ -178,8 +188,9 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
             id="print-receipt-btn"
             className="btn btn-primary"
             onClick={handlePrint}
+            disabled={printState.loading}
           >
-            🖨️ Print Receipt
+            {printState.loading ? '⏳ Printing...' : '🖨 Print Receipt'}
           </button>
           {adminActions && (
             <button id="download-receipt-btn" className="btn btn-secondary" onClick={handleDownload}>
@@ -188,6 +199,7 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
           )}
           {downloadError && <div className="status-msg error">{downloadError}</div>}
         </div>
+        {printState.error && <div className="status-msg error no-print">{printState.error}</div>}
       </div>
     </div>
   );

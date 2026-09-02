@@ -352,7 +352,17 @@ router.get('/:id', requireBranchManager, async (req, res, next) => {
   }
 
   const items = await db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(req.params.id);
-  res.json({ sale, items });
+  const branch = {
+    name: sale.branch_name,
+    address: sale.branch_address,
+    phone: sale.branch_phone,
+  };
+  res.json({
+    sale,
+    items,
+    branch,
+    receipt_print_payload: printService.buildReceipt({ branch, sale, items }),
+  });
   } catch (error) {
     next(error);
   }

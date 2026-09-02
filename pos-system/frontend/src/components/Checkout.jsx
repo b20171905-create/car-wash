@@ -127,12 +127,8 @@ export default function Checkout({ user }) {
         sale: result.sale,
         items: result.items,
         branch: result.branch,
+        receipt_print_payload: result.receipt_print_payload,
       });
-
-      // Also attempt thermal ESC/POS print in background
-      if (result.receipt_print_payload) {
-        api.printThermal(result.receipt_print_payload).catch(() => null);
-      }
 
       setStatusMsg({ type: 'success', text: `Sale #${result.sale.receipt_number} completed!` });
       clearCart();

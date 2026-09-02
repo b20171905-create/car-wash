@@ -120,6 +120,9 @@ export const api = {
 
   // ── Local Thermal Print Agent (per-branch PC) ─────────
   printThermal: async (receiptPrintPayload) => {
+    if (!receiptPrintPayload) {
+      return { printed: false, error: 'No thermal receipt data available' };
+    }
     try {
       const res = await fetch(`${PRINT_AGENT_BASE}/print`, {
         method: 'POST',
