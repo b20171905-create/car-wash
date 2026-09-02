@@ -13,6 +13,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const { execFile } = require('child_process');
 const { printer: ThermalPrinter, types: PrinterTypes } = require('node-thermal-printer');
 
 const PRINTER_INTERFACE = process.env.PRINTER_INTERFACE || 'printer:POS-58'; // Windows shared printer name
@@ -22,6 +23,42 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
+function printWindowsRaw(printerName, buffer) {
+  return new Promise((resolve, reject) => {
+    const script = `
+      param([string]$PrinterName, [string]$Payload)
+      Add-Type @'
+      using System;
+      using System.Runtime.InteropServices;
+      public static class RawPrinter {
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] public class DOCINFO { public string pDocName; public string pOutputFile; public string pDataType; }
+        [DllImport("winspool.drv", EntryPoint="OpenPrinterW", SetLastError=true, CharSet=CharSet.Unicode)] public static extern bool OpenPrinter(string name, out IntPtr handle, IntPtr defaults);
+        [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr handle);
+        [DllImport("winspool.drv", CharSet=CharSet.Unicode)] public static extern int StartDocPrinter(IntPtr handle, int level, DOCINFO info);
+        [DllImport("winspool.drv")] public static extern bool EndDocPrinter(IntPtr handle);
+        [DllImport("winspool.drv")] public static extern bool StartPagePrinter(IntPtr handle);
+        [DllImport("winspool.drv")] public static extern bool EndPagePrinter(IntPtr handle);
+        [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr handle, byte[] data, int count, out int written);
+        public static void Send(string name, byte[] data) {
+          IntPtr handle;
+          if (!OpenPrinter(name, out handle, IntPtr.Zero)) throw new Exception("Could not open printer: " + name);
+          try {
+            var info = new DOCINFO { pDocName = "Tiger Car Wash Receipt", pDataType = "RAW" };
+            if (StartDocPrinter(handle, 1, info) == 0) throw new Exception("Could not start print job");
+            try { if (!StartPagePrinter(handle)) throw new Exception("Could not start printer page"); try { int written; if (!WritePrinter(handle, data, data.Length, out written) || written != data.Length) throw new Exception("Printer did not accept all receipt data"); } finally { EndPagePrinter(handle); } } finally { EndDocPrinter(handle); }
+          } finally { ClosePrinter(handle); }
+        }
+      }
+      [RawPrinter]::Send($PrinterName, [Convert]::FromBase64String($Payload))
+    `;
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded, printerName, buffer.toString('base64')], (error, stdout, stderr) => {
+      if (error) reject(new Error(stderr.trim() || error.message));
+      else resolve();
+    });
+  });
+}
+
 app.post('/print', async (req, res) => {
   const { receipt_print_payload } = req.body; // base64 ESC/POS buffer from backend
   if (!receipt_print_payload) {
@@ -30,18 +67,15 @@ app.post('/print', async (req, res) => {
 
   try {
     const buffer = Buffer.from(receipt_print_payload, 'base64');
-    const thermalPrinter = new ThermalPrinter({
-      type: PrinterTypes.EPSON, // most ESC/POS printers work with EPSON profile
-      interface: PRINTER_INTERFACE,
-    });
-
-    const isConnected = await thermalPrinter.isPrinterConnected();
-    if (!isConnected) {
-      return res.status(503).json({ error: `Printer not reachable at ${PRINTER_INTERFACE}` });
+    if (PRINTER_INTERFACE.startsWith('printer:')) {
+      await printWindowsRaw(PRINTER_INTERFACE.slice('printer:'.length), buffer);
+    } else {
+      const thermalPrinter = new ThermalPrinter({ type: PrinterTypes.EPSON, interface: PRINTER_INTERFACE });
+      const isConnected = await thermalPrinter.isPrinterConnected();
+      if (!isConnected) return res.status(503).json({ error: `Printer not reachable at ${PRINTER_INTERFACE}` });
+      thermalPrinter.raw(buffer);
+      await thermalPrinter.execute();
     }
-
-    thermalPrinter.raw(buffer);
-    await thermalPrinter.execute();
 
     res.json({ printed: true });
   } catch (err) {

@@ -29,6 +29,13 @@ if not exist "%~dp0agent.js" (
   exit /b 1
 )
 
+where powershell >nul 2>nul
+if errorlevel 1 (
+  echo Windows PowerShell was not found. This helper requires Windows PowerShell.
+  pause
+  exit /b 1
+)
+
 set /p PRINTER_NAME=Enter the exact Windows printer name (default: POS-58): 
 if "%PRINTER_NAME%"=="" set "PRINTER_NAME=POS-58"
 >printer-config.bat echo @echo off
