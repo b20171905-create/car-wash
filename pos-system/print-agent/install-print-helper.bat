@@ -15,13 +15,27 @@ if errorlevel 1 (
   exit /b 1
 )
 
+if not exist "%~dp0package.json" (
+  echo The complete print-agent folder is required.
+  echo Keep this file beside agent.js, package.json, and package-lock.json.
+  echo Do not copy this BAT file by itself.
+  pause
+  exit /b 1
+)
+
+if not exist "%~dp0agent.js" (
+  echo agent.js was not found beside this installer.
+  pause
+  exit /b 1
+)
+
 set /p PRINTER_NAME=Enter the exact Windows printer name (default: POS-58): 
 if "%PRINTER_NAME%"=="" set "PRINTER_NAME=POS-58"
 >printer-config.bat echo @echo off
 >>printer-config.bat echo set "PRINTER_INTERFACE=printer:%PRINTER_NAME%"
 >>printer-config.bat echo call "%%~dp0start-print-agent.bat"
 
-call npm install
+call npm install --omit=dev
 if errorlevel 1 (
   echo.
   echo Installation failed. Check your internet connection and try again.
