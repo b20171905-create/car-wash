@@ -85,6 +85,10 @@ body {
   height: 100%;
 }
 
+body.sidebar-open .main-content {
+  overflow: hidden;
+}
+
 html, body { height: 100%; }
 
 #root {
@@ -129,6 +133,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 50;
+  box-shadow: 12px 0 30px rgba(0, 0, 0, 0.2);
   transition: transform var(--transition);
 }
 
@@ -1890,7 +1895,10 @@ input:focus {
     min-width: 0;
     overflow: visible;
   }
-  .sidebar { transform: translateX(-100%); }
+  .sidebar {
+    width: min(85vw, 280px);
+    transform: translateX(-100%);
+  }
   .sidebar.open { transform: translateX(0); }
   .main-content {
     margin-left: 0;

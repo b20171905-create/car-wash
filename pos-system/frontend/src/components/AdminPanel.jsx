@@ -70,11 +70,11 @@ function BranchesTab() {
   }
 
   async function handleDelete(branch) {
-    if (!confirm(`Archive branch "${branch.name}"? It will be removed from active branch lists, while its sales history is preserved.`)) return;
+    if (!confirm(`Permanently delete branch "${branch.name}" and all of its users, sales, and sale items? This cannot be undone.`)) return;
     try {
       await api.deleteBranch(branch.id);
       setBranches((prev) => prev.filter((item) => item.id !== branch.id));
-      setMsg({ type: 'success', text: `Branch "${branch.name}" archived.` });
+      setMsg({ type: 'success', text: `Branch "${branch.name}" and its records were permanently deleted.` });
     } catch (err) {
       setMsg({ type: 'error', text: err.message });
     }

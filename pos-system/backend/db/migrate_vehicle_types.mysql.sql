@@ -2,8 +2,6 @@
 -- Transforms old vehicle type values to standardized enum values.
 -- Schema already defines the vehicle_type ENUM with proper values.
 
-ALTER TABLE branches ADD COLUMN active BOOLEAN DEFAULT TRUE;
-
 UPDATE customers
 SET vehicle_type = 'bike'
 WHERE vehicle_type = 'motor_bike';

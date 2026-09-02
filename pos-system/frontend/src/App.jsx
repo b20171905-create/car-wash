@@ -50,11 +50,15 @@ export default function App() {
 
   useEffect(() => {
     if (!sidebarOpen) return undefined;
+    document.body.classList.add('sidebar-open');
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setSidebarOpen(false);
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.classList.remove('sidebar-open');
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [sidebarOpen]);
 
   function handleLogin(u) {
@@ -81,7 +85,14 @@ export default function App() {
     <div className="app-shell">
       {/* Sidebar Overlay (Mobile) */}
       {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="sidebar-overlay"
+          role="button"
+          tabIndex={0}
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSidebarOpen(false); }}
+        />
       )}
 
       {/* Sidebar */}

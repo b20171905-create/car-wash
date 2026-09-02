@@ -10,7 +10,7 @@ router.use(requireAuth);
 // GET / — branch_manager and owner only (cashiers have no need to enumerate branches)
 router.get('/', requireBranchManager, async (req, res, next) => {
   try {
-    const branches = await db.prepare('SELECT * FROM branches WHERE active = TRUE ORDER BY name').all();
+    const branches = await db.prepare('SELECT * FROM branches ORDER BY name').all();
     res.json(branches);
   } catch (error) {
     next(error);
@@ -48,15 +48,21 @@ router.put('/:id', requireOwner, async (req, res, next) => {
   }
 });
 
-// DELETE /:id — owner only; archive the branch so historical records remain intact
+// DELETE /:id — owner only
 router.delete('/:id', requireOwner, async (req, res, next) => {
   try {
-  const branch = await db.prepare('SELECT id, name, active FROM branches WHERE id = ?').get(req.params.id);
+  const branch = await db.prepare('SELECT id, name FROM branches WHERE id = ?').get(req.params.id);
   if (!branch) return res.status(404).json({ error: 'Branch not found' });
-  if (!branch.active) return res.status(404).json({ error: 'Branch not found' });
 
-  await db.prepare('UPDATE branches SET active = FALSE WHERE id = ?').run(req.params.id);
-  res.json({ success: true, archived: true });
+  await db.transaction(async (connection) => {
+    await connection.prepare(
+      'DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE branch_id = ?)'
+    ).run(req.params.id);
+    await connection.prepare('DELETE FROM sales WHERE branch_id = ?').run(req.params.id);
+    await connection.prepare('DELETE FROM users WHERE branch_id = ?').run(req.params.id);
+    await connection.prepare('DELETE FROM branches WHERE id = ?').run(req.params.id);
+  })();
+  res.json({ success: true, deleted: true });
   } catch (error) {
     next(error);
   }
