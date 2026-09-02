@@ -1955,7 +1955,28 @@ input:focus {
   /* Improved table handling */
   .table-wrap {
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card,
+  .section-actions,
+  .filter-row,
+  .search-filter-row,
+  .checkout-cart,
+  .checkout-payment {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .section-actions {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .section-actions > * {
+    min-width: 0;
   }
   
   table {
@@ -1994,6 +2015,43 @@ input:focus {
   }
   
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
+
+  .page-header-row,
+  .section-actions,
+  .filter-row,
+  .search-filter-row,
+  .checkout-actions,
+  .payment-actions {
+    align-items: stretch;
+  }
+
+  .page-header-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .page-header-badge {
+    align-self: flex-start;
+  }
+
+  .section-actions > div,
+  .section-actions > .btn,
+  .filter-actions,
+  .filter-actions .btn,
+  .checkout-actions > *,
+  .payment-actions > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .section-actions > div {
+    flex: 1 1 100%;
+  }
+
+  .table-wrap {
+    margin-inline: -2px;
+    max-width: calc(100% + 4px);
+  }
   
   /* Tabs on mobile */
   .tabs {
@@ -2184,6 +2242,10 @@ input:focus {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .login-box {
+    padding: 24px 18px;
   }
   
   /* Better button layout on mobile */
