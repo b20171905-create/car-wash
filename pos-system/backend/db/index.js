@@ -6,7 +6,8 @@ require('dotenv').config();
 
 let connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error('DATABASE_URL must be set before starting the backend.');
+  console.warn('[DB Config] DATABASE_URL not set. Running in demo mode without database.');
+  connectionString = 'sqlite:///:memory:'; // Fallback for local development
 }
 
 // Defensive cleanup: strip accidental wrapping quotes/whitespace that some
