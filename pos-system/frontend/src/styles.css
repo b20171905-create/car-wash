@@ -48,7 +48,7 @@
 
 @media (max-width: 768px) {
   :root {
-    --sidebar-w: 0;
+    --sidebar-w: min(85vw, 280px);
     --header-h: 56px;
     --mobile-padding: 10px;
   }

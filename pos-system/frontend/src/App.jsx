@@ -48,6 +48,15 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [view, user]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
+
   function handleLogin(u) {
     setUser(u);
     if (u.role === 'owner') setView('dashboard');
@@ -76,7 +85,7 @@ export default function App() {
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
+      <aside id="mobile-navigation" className={`sidebar${sidebarOpen ? ' open' : ''}`}>
         {/* Navigation */}
         <nav className="sidebar-nav">
           <div className="sidebar-mobile-header">
@@ -109,6 +118,8 @@ export default function App() {
               className="sidebar-toggle-btn"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open navigation menu"
+              aria-expanded={sidebarOpen}
+              aria-controls="mobile-navigation"
             >
               <span aria-hidden="true">☰</span>
               <span className="sidebar-toggle-label">Menu</span>
