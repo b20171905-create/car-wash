@@ -1968,6 +1968,17 @@ input:focus {
     -webkit-overflow-scrolling: touch;
   }
 
+  .card .table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrap table {
+    width: max-content;
+    min-width: 100%;
+  }
+
   .card,
   .section-actions,
   .filter-row,
