@@ -178,7 +178,7 @@ export default function Checkout({ user }) {
             <p>Choose a vehicle to see its available services.</p>
             <div className="vehicle-type-grid">
               {VEHICLE_TYPES.map((type) => (
-                <button key={type.value} className="vehicle-type-btn" onClick={() => selectVehicleType(type)}>
+                <button key={type.value} className="vehicle-type-btn" onClick={() => selectVehicleType(type.value)}>
                   <span>{type.icon}</span>
                   <strong>{type.label}</strong>
                 </button>
