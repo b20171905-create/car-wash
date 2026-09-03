@@ -191,7 +191,7 @@ export default function Checkout({ user }) {
         </div>
 
         {/* Customer Info */}
-        <div className="card">
+        <div className="card checkout-customer-card">
           <h3 style={{ marginBottom: 14 }}>Customer Info <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: '0.8rem' }}>* Required</span></h3>
           <div className="form-row">
             <div className="form-group">

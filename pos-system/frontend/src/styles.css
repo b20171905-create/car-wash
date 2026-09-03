@@ -1098,7 +1098,8 @@ input:focus {
 
   .checkout-left,
   .checkout-right {
-    overflow-y: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
