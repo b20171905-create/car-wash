@@ -1,6 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
@@ -8,9 +6,7 @@ const PK_TIMEZONE = 'Asia/Karachi';
 const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
 const formatPkTime = (value, options = {}) => new Date(value).toLocaleTimeString('en-PK', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit', ...options });
 
-export default function ReceiptModal({ saleData, onClose, adminActions = false, autoAction = null }) {
-  const printRef = useRef();
-  const [downloadError, setDownloadError] = useState('');
+export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
   const [printState, setPrintState] = useState({ loading: false, error: '' });
 
   const sale = saleData?.sale;
@@ -19,7 +15,6 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
     if (!sale || !autoAction) return;
     const timer = window.setTimeout(() => {
       if (autoAction === 'print') handlePrint();
-      if (autoAction === 'download') handleDownload();
     }, 100);
     return () => window.clearTimeout(timer);
   }, [sale, autoAction]);
@@ -49,38 +44,17 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
     setPrintState({ loading: false, error: result.error || 'Could not print receipt.' });
   }
 
-  async function handleDownload() {
-    setDownloadError('');
-    try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#ffffff' });
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-      const width = 130;
-      const height = (canvas.height * width) / canvas.width;
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 14, 14, width, height);
-      pdf.save(`Tiger-Car-Wash-${sale.receipt_number}.pdf`);
-    } catch {
-      setDownloadError('Could not download the receipt PDF.');
-    }
-  }
-
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 420 }}>
         {/* Header — hidden on print */}
         <div className="modal-header no-print">
           <h2 className="modal-title">🧾 Receipt</h2>
-          <div className="modal-header-actions">
-            {adminActions && (
-              <button id="download-receipt-btn" className="btn btn-secondary btn-sm" onClick={handleDownload}>
-                📥 Download PDF
-              </button>
-            )}
-            <button className="modal-close" onClick={onClose} aria-label="Close receipt">✕</button>
-          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close receipt">✕</button>
         </div>
 
         {/* Printable receipt area */}
-        <div ref={printRef} className="print-area">
+        <div className="print-area">
           <div className="receipt-preview">
             {/* Shop Header */}
             <div className="receipt-shop-name">✦ {branchName} ✦</div>
@@ -199,7 +173,6 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
           >
             {printState.loading ? '⏳ Printing...' : '🖨 Print Receipt'}
           </button>
-          {downloadError && <div className="status-msg error">{downloadError}</div>}
         </div>
         {printState.error && <div className="status-msg error no-print">{printState.error}</div>}
       </div>

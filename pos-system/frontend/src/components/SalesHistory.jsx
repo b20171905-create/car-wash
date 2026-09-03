@@ -317,9 +317,6 @@ export default function SalesHistory({ user }) {
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '👁 Preview'}
                               </button>
-                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'download'); }} disabled={reprinting === s.id}>
-                                {reprinting === s.id ? '⏳ Loading...' : '📥 Download'}
-                              </button>
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '🖨️ Print'}
                               </button>
@@ -338,7 +335,7 @@ export default function SalesHistory({ user }) {
       </div>
 
       {receiptData && (
-        <ReceiptModal saleData={receiptData} autoAction={receiptAction} adminActions={user.role === 'owner'} onClose={() => { setReceiptData(null); setReceiptAction(null); }} />
+        <ReceiptModal saleData={receiptData} autoAction={receiptAction} onClose={() => { setReceiptData(null); setReceiptAction(null); }} />
       )}
     </div>
   );
