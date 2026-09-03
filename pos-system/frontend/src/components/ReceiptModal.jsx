@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
@@ -7,6 +9,8 @@ const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString
 const formatPkTime = (value, options = {}) => new Date(value).toLocaleTimeString('en-PK', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit', ...options });
 
 export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
+  const printRef = React.useRef();
+  const [downloadError, setDownloadError] = useState('');
   const [printState, setPrintState] = useState({ loading: false, error: '' });
 
   const sale = saleData?.sale;
@@ -15,6 +19,7 @@ export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
     if (!sale || !autoAction) return;
     const timer = window.setTimeout(() => {
       if (autoAction === 'print') handlePrint();
+      if (autoAction === 'download') handleDownload();
     }, 100);
     return () => window.clearTimeout(timer);
   }, [sale, autoAction]);
@@ -44,6 +49,21 @@ export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
     setPrintState({ loading: false, error: result.error || 'Could not print receipt.' });
   }
 
+  async function handleDownload() {
+    setDownloadError('');
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+      const width = 130;
+      const height = (canvas.height * width) / canvas.width;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 14, 14, width, height);
+      pdf.save(`Tiger-Car-Wash-${sale.receipt_number}.pdf`);
+      onClose();
+    } catch {
+      setDownloadError('Could not download the receipt PDF.');
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 420 }}>
@@ -54,7 +74,7 @@ export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
         </div>
 
         {/* Printable receipt area */}
-        <div className="print-area">
+        <div ref={printRef} className="print-area">
           <div className="receipt-preview">
             {/* Shop Header */}
             <div className="receipt-shop-name">✦ {branchName} ✦</div>
@@ -175,6 +195,7 @@ export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
           </button>
         </div>
         {printState.error && <div className="status-msg error no-print">{printState.error}</div>}
+        {downloadError && <div className="status-msg error no-print">{downloadError}</div>}
       </div>
     </div>
   );

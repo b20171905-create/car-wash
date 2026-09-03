@@ -317,6 +317,9 @@ export default function SalesHistory({ user }) {
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '👁 Preview'}
                               </button>
+                              <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'download'); }} disabled={reprinting === s.id}>
+                                {reprinting === s.id ? '⏳ Loading...' : '📥 Download Receipt'}
+                              </button>
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '🖨️ Print'}
                               </button>
