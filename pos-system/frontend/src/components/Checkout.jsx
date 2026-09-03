@@ -55,7 +55,7 @@ export default function Checkout({ user }) {
   }, []);
 
   const filteredServices = services.filter((s) =>
-    (!vehicleType || !s.vehicle_type || s.vehicle_type === 'all' || s.vehicle_type === vehicleType) &&
+    (!vehicleType || !s.vehicle_type || s.vehicle_type.trim().toLowerCase() === 'all' || s.vehicle_type.trim().toLowerCase() === vehicleType) &&
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 

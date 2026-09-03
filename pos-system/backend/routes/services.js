@@ -4,6 +4,12 @@ const db = require('../db');
 const { requireAuth, requireOwner } = require('../services/auth');
 
 const router = express.Router();
+const VEHICLE_TYPES = new Set(['all', 'bike', 'car', 'truck', 'rikshaw', 'coaster']);
+
+function normalizeVehicleType(value) {
+  const normalized = String(value || 'all').trim().toLowerCase();
+  return VEHICLE_TYPES.has(normalized) ? normalized : 'all';
+}
 // All /api/services routes require a valid JWT
 router.use(requireAuth);
 
@@ -11,15 +17,16 @@ router.use(requireAuth);
 router.get('/', async (req, res, next) => {
   try {
     const services = await db.prepare('SELECT * FROM services WHERE active = TRUE ORDER BY name').all();
-    res.json(services);
+    res.json(services.map((service) => ({ ...service, vehicle_type: normalizeVehicleType(service.vehicle_type) })));
   } catch (error) {
     next(error);
   }
 });
 
 router.post('/', requireOwner, async (req, res, next) => {
-  const { name, description = '', vehicle_type = 'all', price, duration_minutes = null, active = true } = req.body;
-  if (!name || !['all', 'bike', 'car', 'truck', 'rikshaw', 'coaster'].includes(vehicle_type) || price === undefined || Number.isNaN(Number(price)) || Number(price) < 0) {
+  const { name, description = '', price, duration_minutes = null, active = true } = req.body;
+  const vehicleType = normalizeVehicleType(req.body.vehicle_type);
+  if (!name || (req.body.vehicle_type && !VEHICLE_TYPES.has(String(req.body.vehicle_type).trim().toLowerCase())) || price === undefined || Number.isNaN(Number(price)) || Number(price) < 0) {
     return res.status(400).json({ error: 'Name and a valid non-negative price are required.' });
   }
 
@@ -28,7 +35,7 @@ router.post('/', requireOwner, async (req, res, next) => {
     await db.prepare(`
       INSERT INTO services (id, name, description, vehicle_type, price, duration_minutes, active)
       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, name.trim(), description, vehicle_type, Number(price), duration_minutes ? Number(duration_minutes) : null, Boolean(active));
+    ).run(id, name.trim(), description, vehicleType, Number(price), duration_minutes ? Number(duration_minutes) : null, Boolean(active));
 
     res.status(201).json(await db.prepare('SELECT * FROM services WHERE id = ?').get(id));
   } catch (error) {
@@ -41,9 +48,10 @@ router.put('/:id', requireOwner, async (req, res, next) => {
   const current = await db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
   if (!current) return res.status(404).json({ error: 'Service not found.' });
 
-  const { name = current.name, description = current.description, vehicle_type = current.vehicle_type || 'all', price = current.price,
+  const { name = current.name, description = current.description, price = current.price,
     duration_minutes = current.duration_minutes, active = current.active } = req.body;
-  if (!name || !['all', 'bike', 'car', 'truck', 'rikshaw', 'coaster'].includes(vehicle_type) || Number.isNaN(Number(price)) || Number(price) < 0) {
+  const vehicleType = normalizeVehicleType(req.body.vehicle_type ?? current.vehicle_type);
+  if (!name || (req.body.vehicle_type && !VEHICLE_TYPES.has(String(req.body.vehicle_type).trim().toLowerCase())) || Number.isNaN(Number(price)) || Number(price) < 0) {
     return res.status(400).json({ error: 'Name and a valid non-negative price are required.' });
   }
 
@@ -51,7 +59,7 @@ router.put('/:id', requireOwner, async (req, res, next) => {
     UPDATE services
     SET name = ?, description = ?, vehicle_type = ?, price = ?, duration_minutes = ?, active = ?
     WHERE id = ?
-  `).run(name.trim(), description || '', vehicle_type, Number(price), duration_minutes ? Number(duration_minutes) : null, active ? 1 : 0, req.params.id);
+  `).run(name.trim(), description || '', vehicleType, Number(price), duration_minutes ? Number(duration_minutes) : null, active ? 1 : 0, req.params.id);
 
   res.json(await db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id));
   } catch (error) {

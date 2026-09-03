@@ -230,9 +230,10 @@ function ServicesTab() {
     setMsg(null);
     try {
       const wasEditing = Boolean(editingId);
+      const servicePayload = { ...form, vehicle_type: (form.vehicle_type || 'all').trim().toLowerCase() };
       const saved = editingId
-        ? await api.updateService(editingId, form)
-        : await api.createService(form);
+        ? await api.updateService(editingId, servicePayload)
+        : await api.createService(servicePayload);
       setServices((prev) => editingId ? prev.map((s) => s.id === saved.id ? saved : s) : [...prev, saved]);
       resetForm();
       setMsg({ type: 'success', text: `Service ${wasEditing ? 'updated' : 'created'} successfully.` });
