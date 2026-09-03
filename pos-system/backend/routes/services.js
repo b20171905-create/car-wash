@@ -8,6 +8,9 @@ const VEHICLE_TYPES = new Set(['all', 'bike', 'car', 'truck', 'rikshaw', 'coaste
 
 function normalizeVehicleType(value) {
   const normalized = String(value || 'all').trim().toLowerCase();
+  if (normalized === 'suv' || normalized === 'sedan' || normalized === 'car service') return 'car';
+  if (normalized === 'rickshaw' || normalized === 'auto') return 'rikshaw';
+  if (normalized === 'bus') return 'coaster';
   return VEHICLE_TYPES.has(normalized) ? normalized : 'all';
 }
 // All /api/services routes require a valid JWT
