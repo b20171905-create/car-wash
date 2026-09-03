@@ -69,7 +69,14 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
         {/* Header — hidden on print */}
         <div className="modal-header no-print">
           <h2 className="modal-title">🧾 Receipt</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <div className="modal-header-actions">
+            {adminActions && (
+              <button id="download-receipt-btn" className="btn btn-secondary btn-sm" onClick={handleDownload}>
+                📥 Download PDF
+              </button>
+            )}
+            <button className="modal-close" onClick={onClose} aria-label="Close receipt">✕</button>
+          </div>
         </div>
 
         {/* Printable receipt area */}
@@ -192,11 +199,6 @@ export default function ReceiptModal({ saleData, onClose, adminActions = false, 
           >
             {printState.loading ? '⏳ Printing...' : '🖨 Print Receipt'}
           </button>
-          {adminActions && (
-            <button id="download-receipt-btn" className="btn btn-secondary" onClick={handleDownload}>
-              📥 Download PDF
-            </button>
-          )}
           {downloadError && <div className="status-msg error">{downloadError}</div>}
         </div>
         {printState.error && <div className="status-msg error no-print">{printState.error}</div>}

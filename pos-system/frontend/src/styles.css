@@ -1563,6 +1563,14 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
 
 .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
 
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .modal-close {
   width: 32px; height: 32px;
   border-radius: 8px;
@@ -2319,6 +2327,12 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
     max-height: 90vh;
     max-height: 90dvh;
     border-radius: 16px 16px 0 0;
+  }
+
+  .modal-header-actions .btn {
+    min-height: 40px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
   }
 }
 
