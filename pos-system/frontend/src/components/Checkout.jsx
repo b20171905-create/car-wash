@@ -115,6 +115,12 @@ export default function Checkout({ user }) {
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discountAmt = parseFloat(discount) || 0;
   const total = Math.max(0, subtotal - discountAmt);
+  const customerInfoComplete = Boolean(
+    customerName.trim() &&
+    /^\+92\d{11}$/.test(customerPhone.trim()) &&
+    /^[A-Za-z]{1,3}[- ]\d{1,4}$/.test(vehicleNumber.trim()) &&
+    vehicleType
+  );
 
   async function handleCheckout() {
     if (!cart.length) return;
@@ -281,7 +287,7 @@ export default function Checkout({ user }) {
       </div>
 
       {/* Right — Cart + Payment */}
-      {checkoutStep === 'billing' && <div className="checkout-right">
+      <div className="checkout-right">
         {/* Cart */}
         <div className="card" style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -344,6 +350,7 @@ export default function Checkout({ user }) {
           )}
         </div>
 
+        {checkoutStep === 'billing' && <>
         {/* Discount */}
         <div className="card card-sm">
           <label className="form-label">Discount (Rs.)</label>
@@ -387,7 +394,7 @@ export default function Checkout({ user }) {
         )}
 
         {/* Checkout Button */}
-        <button
+        {customerInfoComplete && <button
           id="checkout-btn"
           className="btn btn-primary btn-block btn-lg"
           onClick={handleCheckout}
@@ -396,8 +403,9 @@ export default function Checkout({ user }) {
           {loading
             ? <><span className="spinner" /> Processing…</>
             : `🖨️ Charge ${PKR(total)} & Print Receipt`}
-        </button>
-      </div>}
+        </button>}
+        </>}
+      </div>
 
       {/* Receipt Modal */}
       {receiptData && (
