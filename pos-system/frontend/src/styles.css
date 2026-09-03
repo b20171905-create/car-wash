@@ -289,8 +289,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 .top-bar {
@@ -1083,23 +1082,20 @@ input:focus {
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: 20px;
-  height: calc(100vh - var(--header-h) - 60px);
-  min-height: 600px;
+  min-height: 0;
 }
 
-.checkout-left { overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.checkout-right { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.checkout-left { display: flex; flex-direction: column; gap: 16px; }
+.checkout-right { display: flex; flex-direction: column; gap: 14px; }
 
 @media (min-width: 1025px) {
   .checkout-layout {
-    height: calc(100vh - 180px);
     min-height: 0;
   }
 
   .checkout-left,
   .checkout-right {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
   }
 }
 
