@@ -13,13 +13,16 @@ function BranchesTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const [actionMenuDirection, setActionMenuDirection] = useState('down');
   const closeActionTimerRef = useRef(null);
 
-  const openActionMenu = (id) => {
+  const openActionMenu = (id, event) => {
     if (closeActionTimerRef.current) {
       clearTimeout(closeActionTimerRef.current);
       closeActionTimerRef.current = null;
     }
+    const triggerBounds = event.currentTarget.getBoundingClientRect();
+    setActionMenuDirection(triggerBounds.bottom + 180 > window.innerHeight ? 'up' : 'down');
     setOpenActionId(id);
   };
 
@@ -141,9 +144,9 @@ function BranchesTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => openActionMenu(b.id)}
+                        onMouseEnter={(event) => openActionMenu(b.id, event)}
                         onMouseLeave={() => closeActionMenu(b.id)}
-                        onFocus={() => openActionMenu(b.id)}
+                        onFocus={(event) => openActionMenu(b.id, event)}
                         onBlur={() => closeActionMenu(b.id)}
                       >
                         <button
@@ -155,7 +158,7 @@ function BranchesTab() {
                           ⋮
                         </button>
                         {openActionId === b.id && (
-                          <div className="action-menu-dropdown">
+                          <div className={`action-menu-dropdown${actionMenuDirection === 'up' ? ' open-up' : ''}`}>
                             <button onClick={() => { setOpenActionId(null); editBranch(b); }}>✏️ Edit</button>
                             <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(b); }}>🗑 Delete</button>
                           </div>
@@ -182,13 +185,16 @@ function ServicesTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const [actionMenuDirection, setActionMenuDirection] = useState('down');
   const closeActionTimerRef = useRef(null);
 
-  const openActionMenu = (id) => {
+  const openActionMenu = (id, event) => {
     if (closeActionTimerRef.current) {
       clearTimeout(closeActionTimerRef.current);
       closeActionTimerRef.current = null;
     }
+    const triggerBounds = event.currentTarget.getBoundingClientRect();
+    setActionMenuDirection(triggerBounds.bottom + 180 > window.innerHeight ? 'up' : 'down');
     setOpenActionId(id);
   };
 
@@ -321,9 +327,9 @@ function ServicesTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => openActionMenu(s.id)}
+                        onMouseEnter={(event) => openActionMenu(s.id, event)}
                         onMouseLeave={() => closeActionMenu(s.id)}
-                        onFocus={() => openActionMenu(s.id)}
+                        onFocus={(event) => openActionMenu(s.id, event)}
                         onBlur={() => closeActionMenu(s.id)}
                       >
                         <button
@@ -335,7 +341,7 @@ function ServicesTab() {
                           ⋮
                         </button>
                         {openActionId === s.id && (
-                          <div className="action-menu-dropdown">
+                          <div className={`action-menu-dropdown${actionMenuDirection === 'up' ? ' open-up' : ''}`}>
                             <button onClick={() => { setOpenActionId(null); editService(s); }}>✏️ Edit</button>
                             <button onClick={() => { setOpenActionId(null); toggleService(s); }}>{s.active ? '⏸ Deactivate' : '▶ Activate'}</button>
                             <button className="danger" onClick={() => { setOpenActionId(null); deleteService(s); }}>🗑 Delete</button>
@@ -364,13 +370,16 @@ function UsersTab() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
+  const [actionMenuDirection, setActionMenuDirection] = useState('down');
   const closeActionTimerRef = useRef(null);
 
-  const openActionMenu = (id) => {
+  const openActionMenu = (id, event) => {
     if (closeActionTimerRef.current) {
       clearTimeout(closeActionTimerRef.current);
       closeActionTimerRef.current = null;
     }
+    const triggerBounds = event.currentTarget.getBoundingClientRect();
+    setActionMenuDirection(triggerBounds.bottom + 180 > window.innerHeight ? 'up' : 'down');
     setOpenActionId(id);
   };
 
@@ -572,9 +581,9 @@ function UsersTab() {
                     <td className="sales-admin-actions">
                       <div
                         className="action-menu"
-                        onMouseEnter={() => openActionMenu(u.id)}
+                        onMouseEnter={(event) => openActionMenu(u.id, event)}
                         onMouseLeave={() => closeActionMenu(u.id)}
-                        onFocus={() => openActionMenu(u.id)}
+                        onFocus={(event) => openActionMenu(u.id, event)}
                         onBlur={() => closeActionMenu(u.id)}
                       >
                         <button
@@ -586,7 +595,7 @@ function UsersTab() {
                           ⋮
                         </button>
                         {openActionId === u.id && (
-                          <div className="action-menu-dropdown">
+                          <div className={`action-menu-dropdown${actionMenuDirection === 'up' ? ' open-up' : ''}`}>
                             <button onClick={() => { setOpenActionId(null); handlePasswordReset(u); }}>🔐 Reset password</button>
                             <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(u); }}>🗑 Delete</button>
                           </div>

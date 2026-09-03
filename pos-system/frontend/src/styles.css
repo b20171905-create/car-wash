@@ -1421,6 +1421,11 @@ input:focus {
   pointer-events: auto;
 }
 
+.action-menu-dropdown.open-up {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
 /* Keep menus inside the viewport area of a table: lower rows open upward. */
 tr:nth-last-child(-n + 2) .action-menu-dropdown {
   top: auto;
