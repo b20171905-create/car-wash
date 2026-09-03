@@ -181,7 +181,7 @@ function ServicesTab() {
   const [services, setServices] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '', price: '', active: true });
+  const [form, setForm] = useState({ name: '', description: '', vehicle_type: 'all', price: '', active: true });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
@@ -212,7 +212,7 @@ function ServicesTab() {
   }, []);
 
   function resetForm() {
-    setForm({ name: '', description: '', price: '', active: true });
+    setForm({ name: '', description: '', vehicle_type: 'all', price: '', active: true });
     setEditingId(null);
     setShowForm(false);
   }
@@ -291,6 +291,17 @@ function ServicesTab() {
               <label className="form-label">Description</label>
               <input className="form-input" value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
+            <div className="form-group">
+              <label className="form-label">Vehicle Type *</label>
+              <select className="form-select" required value={form.vehicle_type || 'all'} onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })}>
+                <option value="all">All vehicle types</option>
+                <option value="bike">Bike</option>
+                <option value="car">Car</option>
+                <option value="truck">Truck</option>
+                <option value="rikshaw">Rikshaw</option>
+                <option value="coaster">Coaster</option>
+              </select>
+            </div>
             <label className="form-label" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
               <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} /> Active
             </label>
@@ -311,12 +322,13 @@ function ServicesTab() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Service</th><th>Description</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>Service</th><th>Vehicle</th><th>Description</th><th>Price</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {services.map((s) => (
                   <tr key={s.id}>
                     <td><strong>{s.name}</strong></td>
+                    <td><span className="badge badge-teal">{s.vehicle_type || 'all'}</span></td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{s.description || '—'}</td>
                     <td style={{ fontWeight: 700, color: 'var(--teal-light)' }}>Rs. {s.price}</td>
                     <td>

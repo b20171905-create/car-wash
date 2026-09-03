@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS services (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  vehicle_type TEXT NOT NULL DEFAULT 'all' CHECK (vehicle_type IN ('all', 'bike', 'car', 'truck', 'rikshaw', 'coaster')),
   price DOUBLE PRECISION NOT NULL,
   duration_minutes INTEGER,
   active BOOLEAN DEFAULT TRUE,

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS services (
   id VARCHAR(255) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  vehicle_type ENUM('all', 'bike', 'car', 'truck', 'rikshaw', 'coaster') NOT NULL DEFAULT 'all',
   price DOUBLE NOT NULL,
   duration_minutes INT,
   active BOOLEAN DEFAULT TRUE,

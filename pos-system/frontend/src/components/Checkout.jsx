@@ -25,6 +25,14 @@ const PAYMENT_OPTIONS = [
   { value: 'upi',    label: 'Bank Transfer', icon: '🏦' },
 ];
 
+const VEHICLE_TYPES = [
+  { value: 'bike', label: 'Bike', icon: '🏍️' },
+  { value: 'car', label: 'Car', icon: '🚗' },
+  { value: 'truck', label: 'Truck', icon: '🚚' },
+  { value: 'rikshaw', label: 'Rikshaw', icon: '🛺' },
+  { value: 'coaster', label: 'Coaster', icon: '🚌' },
+];
+
 export default function Checkout({ user }) {
   const [services, setServices] = useState([]);
   const [cart, setCart] = useState([]);
@@ -33,6 +41,7 @@ export default function Checkout({ user }) {
   const [customerPhone, setCustomerPhone] = useState('+92');
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [vehicleType, setVehicleType] = useState('');
+  const [checkoutStep, setCheckoutStep] = useState('vehicle');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [discount, setDiscount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,8 +55,16 @@ export default function Checkout({ user }) {
   }, []);
 
   const filteredServices = services.filter((s) =>
+    (!vehicleType || !s.vehicle_type || s.vehicle_type === 'all' || s.vehicle_type === vehicleType) &&
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  function selectVehicleType(type) {
+    setVehicleType(type);
+    setCart([]);
+    setCheckoutStep('services');
+    setStatusMsg(null);
+  }
 
   function addToCart(service) {
     setCart((prev) => {
@@ -79,6 +96,7 @@ export default function Checkout({ user }) {
     setCustomerPhone('+92');
     setVehicleNumber('');
     setVehicleType('');
+    setCheckoutStep('vehicle');
     setDiscount('');
     setStatusMsg(null);
   }
@@ -140,11 +158,27 @@ export default function Checkout({ user }) {
   }
 
   return (
-    <div className="checkout-layout">
+    <div className={`checkout-layout checkout-step-${checkoutStep}`}>
       {/* Left — Services + Customer */}
       <div className="checkout-left">
-        {/* Services */}
+        {checkoutStep === 'vehicle' && (
+          <div className="card vehicle-type-card">
+            <h3>Select Vehicle Type</h3>
+            <p>Choose a vehicle to see its available services.</p>
+            <div className="vehicle-type-grid">
+              {VEHICLE_TYPES.map((type) => (
+                <button key={type.value} className="vehicle-type-btn" onClick={() => selectVehicleType(type)}>
+                  <span>{type.icon}</span>
+                  <strong>{type.label}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {checkoutStep === 'services' && (
         <div className="card">
+          {/* Services */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <h3>Services</h3>
             <span className="badge badge-teal">{filteredServices.length} available</span>
@@ -188,10 +222,17 @@ export default function Checkout({ user }) {
               ))}
             </div>
           )}
+          <div className="checkout-step-actions">
+            <button className="btn btn-ghost" onClick={() => setCheckoutStep('vehicle')}>← Change Vehicle</button>
+            <button className="btn btn-primary" onClick={() => cart.length ? setCheckoutStep('billing') : setStatusMsg({ type: 'error', text: 'Select at least one service to continue.' })}>
+              Continue to Billing →
+            </button>
+          </div>
         </div>
+        )}
 
         {/* Customer Info */}
-        <div className="card checkout-customer-card">
+        {checkoutStep === 'billing' && <div className="card checkout-customer-card">
           <h3 style={{ marginBottom: 14 }}>Customer Info <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: '0.8rem' }}>* Required</span></h3>
           <div className="form-row">
             <div className="form-group">
@@ -210,22 +251,21 @@ export default function Checkout({ user }) {
             </div>
             <div className="form-group">
               <label className="form-label">Vehicle Type *</label>
-              <select className="form-select" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} required>
-                <option value="">Select vehicle type</option>
+              <select className="form-select" value={vehicleType} disabled required>
                 <option value="bike">Bike</option>
                 <option value="car">Car</option>
-                <option value="rikshaw">Rikshaw</option>
-                <option value="suv">SUV</option>
                 <option value="coaster">Coaster</option>
+                <option value="rikshaw">Rikshaw</option>
                 <option value="truck">Truck</option>
               </select>
             </div>
           </div>
-        </div>
+          <button className="btn btn-ghost" type="button" onClick={() => setCheckoutStep('services')}>← Back to Services</button>
+        </div>}
       </div>
 
       {/* Right — Cart + Payment */}
-      <div className="checkout-right">
+      {checkoutStep === 'billing' && <div className="checkout-right">
         {/* Cart */}
         <div className="card" style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -341,7 +381,7 @@ export default function Checkout({ user }) {
             ? <><span className="spinner" /> Processing…</>
             : `🖨️ Charge ${PKR(total)} & Print Receipt`}
         </button>
-      </div>
+      </div>}
 
       {/* Receipt Modal */}
       {receiptData && (

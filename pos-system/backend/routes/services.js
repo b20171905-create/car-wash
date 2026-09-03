@@ -18,17 +18,17 @@ router.get('/', async (req, res, next) => {
 });
 
 router.post('/', requireOwner, async (req, res, next) => {
-  const { name, description = '', price, duration_minutes = null, active = true } = req.body;
-  if (!name || price === undefined || Number.isNaN(Number(price)) || Number(price) < 0) {
+  const { name, description = '', vehicle_type = 'all', price, duration_minutes = null, active = true } = req.body;
+  if (!name || !['all', 'bike', 'car', 'truck', 'rikshaw', 'coaster'].includes(vehicle_type) || price === undefined || Number.isNaN(Number(price)) || Number(price) < 0) {
     return res.status(400).json({ error: 'Name and a valid non-negative price are required.' });
   }
 
   const id = uuid();
   try {
     await db.prepare(`
-      INSERT INTO services (id, name, description, price, duration_minutes, active)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, name.trim(), description, Number(price), duration_minutes ? Number(duration_minutes) : null, Boolean(active));
+      INSERT INTO services (id, name, description, vehicle_type, price, duration_minutes, active)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, name.trim(), description, vehicle_type, Number(price), duration_minutes ? Number(duration_minutes) : null, Boolean(active));
 
     res.status(201).json(await db.prepare('SELECT * FROM services WHERE id = ?').get(id));
   } catch (error) {
@@ -41,17 +41,17 @@ router.put('/:id', requireOwner, async (req, res, next) => {
   const current = await db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
   if (!current) return res.status(404).json({ error: 'Service not found.' });
 
-  const { name = current.name, description = current.description, price = current.price,
+  const { name = current.name, description = current.description, vehicle_type = current.vehicle_type || 'all', price = current.price,
     duration_minutes = current.duration_minutes, active = current.active } = req.body;
-  if (!name || Number.isNaN(Number(price)) || Number(price) < 0) {
+  if (!name || !['all', 'bike', 'car', 'truck', 'rikshaw', 'coaster'].includes(vehicle_type) || Number.isNaN(Number(price)) || Number(price) < 0) {
     return res.status(400).json({ error: 'Name and a valid non-negative price are required.' });
   }
 
   await db.prepare(`
     UPDATE services
-    SET name = ?, description = ?, price = ?, duration_minutes = ?, active = ?
+    SET name = ?, description = ?, vehicle_type = ?, price = ?, duration_minutes = ?, active = ?
     WHERE id = ?
-  `).run(name.trim(), description || '', Number(price), duration_minutes ? Number(duration_minutes) : null, active ? 1 : 0, req.params.id);
+  `).run(name.trim(), description || '', vehicle_type, Number(price), duration_minutes ? Number(duration_minutes) : null, active ? 1 : 0, req.params.id);
 
   res.json(await db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id));
   } catch (error) {
