@@ -54,10 +54,21 @@ export default function Checkout({ user }) {
       .catch((e) => setStatusMsg({ type: 'error', text: e.message }));
   }, []);
 
-  const filteredServices = services.filter((s) =>
-    (!vehicleType || !s.vehicle_type || ['all', vehicleType, ...(vehicleType === 'car' ? ['suv', 'sedan'] : []), ...(vehicleType === 'rikshaw' ? ['rickshaw', 'auto'] : []), ...(vehicleType === 'coaster' ? ['bus'] : [])].includes(s.vehicle_type.trim().toLowerCase())) &&
-    s.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedServices = services.map((service) => ({
+    ...service,
+    vehicle_type: String(service.vehicle_type ?? service.vehicleType ?? service.type ?? 'all').trim().toLowerCase(),
+  }));
+  const matchesVehicle = (service) => {
+    if (!vehicleType || service.vehicle_type === 'all' || service.vehicle_type === vehicleType) return true;
+    if (vehicleType === 'car' && ['suv', 'sedan'].includes(service.vehicle_type)) return true;
+    if (vehicleType === 'rikshaw' && ['rickshaw', 'auto'].includes(service.vehicle_type)) return true;
+    if (vehicleType === 'coaster' && service.vehicle_type === 'bus') return true;
+    return false;
+  };
+  const searchedServices = normalizedServices.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
+  const filteredServices = searchedServices.filter(matchesVehicle);
+  const showingFallbackServices = Boolean(vehicleType && searchedServices.length > 0 && filteredServices.length === 0);
+  const visibleServices = showingFallbackServices ? searchedServices : filteredServices;
 
   function selectVehicleType(type) {
     setVehicleType(type);
@@ -181,7 +192,7 @@ export default function Checkout({ user }) {
           {/* Services */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <h3>Services</h3>
-            <span className="badge badge-teal">{filteredServices.length} available</span>
+            <span className="badge badge-teal">{visibleServices.length} available</span>
           </div>
 
           <div className="services-search">
@@ -195,14 +206,19 @@ export default function Checkout({ user }) {
             />
           </div>
 
-          {filteredServices.length === 0 ? (
+          {showingFallbackServices && (
+            <div className="status-msg info" style={{ marginBottom: 12 }}>
+              No services are assigned to {vehicleType} yet. Showing available services.
+            </div>
+          )}
+          {visibleServices.length === 0 ? (
             <div className="empty-state" style={{ padding: '24px 0' }}>
               <div className="empty-icon">🔍</div>
               <div className="empty-title">No services found</div>
             </div>
           ) : (
             <div className="services-grid">
-              {filteredServices.map((s) => (
+              {visibleServices.map((s) => (
                 <div
                   key={s.id}
                   id={`service-${s.id}`}
