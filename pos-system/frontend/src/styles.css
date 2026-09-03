@@ -1412,7 +1412,8 @@ input:focus {
 
 .action-menu-dropdown {
   position: absolute;
-  bottom: calc(100% + 10px);
+  top: calc(100% + 10px);
+  bottom: auto;
   right: 0;
   z-index: 60;
   min-width: 140px;
@@ -1422,6 +1423,12 @@ input:focus {
   border-radius: 8px;
   box-shadow: var(--shadow);
   pointer-events: auto;
+}
+
+/* Keep menus inside the viewport area of a table: lower rows open upward. */
+tr:nth-last-child(-n + 2) .action-menu-dropdown {
+  top: auto;
+  bottom: calc(100% + 10px);
 }
 
 .sales-history-table,
@@ -1975,6 +1982,11 @@ input:focus {
     -webkit-overflow-scrolling: touch;
   }
 
+  .table-wrap:has(.action-menu:focus-within),
+  .card .table-wrap:has(.action-menu:focus-within) {
+    overflow: visible;
+  }
+
   .table-wrap table {
     width: max-content;
     min-width: 100%;
@@ -2121,6 +2133,11 @@ input:focus {
     min-width: 140px;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  tr:nth-last-child(-n + 2) .action-menu-dropdown {
+    top: auto;
+    bottom: 100%;
   }
   
   .action-menu-dropdown button {
