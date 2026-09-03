@@ -20,6 +20,8 @@ const PAGE_META = {
   admin: { title: 'Administration', subtitle: 'Manage branches, services and staff accounts' },
 };
 
+const DESKTOP_APP_URL = import.meta.env.VITE_DESKTOP_APP_URL || '/downloads/Car-Shop-POS-Setup.exe';
+
 function getInitials(name = '') {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
@@ -144,6 +146,15 @@ export default function App() {
             </div>
           </div>
           <div className="top-bar-account">
+            <a
+              className="desktop-app-download"
+              href={DESKTOP_APP_URL}
+              download
+              title="Download Windows desktop app"
+            >
+              <span aria-hidden="true">⬇</span>
+              <span>Download App</span>
+            </a>
             <div className="account-menu">
               <button
                 id="owner-menu-btn"

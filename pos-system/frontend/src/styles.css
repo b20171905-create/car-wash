@@ -325,6 +325,28 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   gap: 12px;
 }
 
+.desktop-app-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-active);
+  border-radius: 8px;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--teal-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.desktop-app-download:hover {
+  background: rgba(20, 184, 166, 0.22);
+  color: var(--text);
+}
+
 .account-menu {
   position: relative;
 }
@@ -2225,6 +2247,12 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
   
   .top-bar-account .user-info { display: none; }
   .top-bar-account .user-chip { padding: 0; background: transparent; }
+
+  .desktop-app-download {
+    min-height: 40px;
+    padding: 8px 9px;
+    font-size: 0.72rem;
+  }
   
   .brand-name { font-size: 0.88rem; }
   .brand-tagline { display: none; }
