@@ -1901,15 +1901,17 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
     grid-template-columns: 1fr !important;
     display: flex !important;
     flex-direction: column !important;
-    height: auto;
+    height: auto !important;
     min-height: 0;
+    overflow: visible;
   }
   .checkout-left,
   .checkout-right {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0;
-    overflow: visible;
+    height: auto;
+    overflow: visible !important;
   }
   .sidebar {
     width: min(85vw, 280px);
