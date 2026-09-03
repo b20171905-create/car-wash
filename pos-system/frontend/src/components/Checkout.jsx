@@ -265,21 +265,9 @@ export default function Checkout({ user }) {
               <input className="form-input" type="tel" placeholder="+9230012345678" value={customerPhone} onChange={(e) => setCustomerPhone(`+92${e.target.value.replace(/\D/g, '').replace(/^92/, '').slice(0, 11)}`)} maxLength={14} inputMode="tel" required />
             </div>
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Vehicle Number *</label>
-              <input className="form-input" placeholder="e.g. ABC-1234" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 8))} maxLength={8} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Vehicle Type *</label>
-              <select className="form-select" value={vehicleType} disabled required>
-                <option value="bike">Bike</option>
-                <option value="car">Car</option>
-                <option value="coaster">Coaster</option>
-                <option value="rikshaw">Rikshaw</option>
-                <option value="truck">Truck</option>
-              </select>
-            </div>
+          <div className="form-group">
+            <label className="form-label">Vehicle Number *</label>
+            <input className="form-input" placeholder="e.g. ABC-1234" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 8))} maxLength={8} required />
           </div>
           <button className="btn btn-ghost" type="button" onClick={() => setCheckoutStep('services')}>← Back to Services</button>
         </div>}
