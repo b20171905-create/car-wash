@@ -72,7 +72,6 @@ export default function Checkout({ user }) {
 
   function selectVehicleType(type) {
     setVehicleType(type);
-    setCart([]);
     setCheckoutStep('services');
     setStatusMsg(null);
   }
