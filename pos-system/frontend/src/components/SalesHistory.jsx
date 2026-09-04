@@ -60,6 +60,8 @@ export default function SalesHistory({ user }) {
   const [paymentFilter, setPaymentFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState(null);
 
   const resetFilters = () => {
     const emptyValues = {
@@ -152,7 +154,27 @@ export default function SalesHistory({ user }) {
     }
   }
 
-  const totalShown = sales.reduce((s, x) => s + Number(x.total), 0);
+  async function handleExport(allData = false) {
+    if (user.role !== 'owner' || exporting) return;
+    setExporting(true);
+    setExportMessage(null);
+    try {
+      const result = await api.downloadExcelExport(allData ? {} : { from: fromDate, to: toDate });
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setExportMessage({ type: 'success', text: 'Excel file downloaded.' });
+    } catch (error) {
+      setExportMessage({ type: 'error', text: error.message });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const paymentBadge = (method) => {
     const map = { cash: 'badge-green', card: 'badge-teal', upi: 'badge-purple', wallet: 'badge-amber', other: 'badge-gray' };
@@ -228,23 +250,24 @@ export default function SalesHistory({ user }) {
         </div>
       </div>
 
-      {/* Summary Row */}
-      {!loading && (
-        <div className="sales-history-summary" style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: '0 0 260px', minWidth: 220 }}>
-            <span style={{ fontSize: '1.3rem' }}>🧾</span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text)' }}>{sales.length}</div>
-              <div className="stat-label">Transactions Shown</div>
-            </div>
+      {/* Export panel */}
+      {user.role === 'owner' && (
+        <div className="card card-sm" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+          <div>
+            <div className="section-title" style={{ fontSize: '1rem' }}>Export Data</div>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              Download Excel using the selected dates, or export all records.
+            </p>
           </div>
-          <div className="card card-sm" style={{ display: 'flex', gap: 10, alignItems: 'center', flex: '0 0 260px', minWidth: 220 }}>
-            <span style={{ fontSize: '1.3rem' }}>💰</span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--teal-light)' }}>{PKR(totalShown)}</div>
-              <div className="stat-label">Total (Filtered)</div>
-            </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="btn btn-ghost btn-sm" type="button" onClick={() => handleExport(true)} disabled={exporting}>
+              All data
+            </button>
+            <button id="sales-history-export-btn" className="btn btn-primary btn-sm" type="button" onClick={() => handleExport(false)} disabled={exporting}>
+              {exporting ? <span className="spinner" /> : '↓ Export Excel'}
+            </button>
           </div>
+          {exportMessage && <div className={`status-msg ${exportMessage.type}`} style={{ flexBasis: '100%', margin: 0 }}>{exportMessage.text}</div>}
         </div>
       )}
 
