@@ -26,7 +26,6 @@ app.use(express.json({ limit: '2mb' }));
 function printWindowsRaw(printerName, buffer) {
   return new Promise((resolve, reject) => {
     const script = `
-      param([string]$PrinterName, [string]$Payload)
       Add-Type @'
       using System;
       using System.Runtime.InteropServices;
@@ -49,10 +48,17 @@ function printWindowsRaw(printerName, buffer) {
           } finally { ClosePrinter(handle); }
         }
       }
-      [RawPrinter]::Send($PrinterName, [Convert]::FromBase64String($Payload))
+      '@
+      [RawPrinter]::Send($env:PRINT_AGENT_PRINTER_NAME, [Convert]::FromBase64String($env:PRINT_AGENT_PAYLOAD))
     `;
     const encoded = Buffer.from(script, 'utf16le').toString('base64');
-    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded, printerName, buffer.toString('base64')], (error, stdout, stderr) => {
+    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], {
+      env: {
+        ...process.env,
+        PRINT_AGENT_PRINTER_NAME: printerName,
+        PRINT_AGENT_PAYLOAD: buffer.toString('base64'),
+      },
+    }, (error, stdout, stderr) => {
       if (error) reject(new Error(stderr.trim() || error.message));
       else resolve();
     });
