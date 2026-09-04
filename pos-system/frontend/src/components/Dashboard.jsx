@@ -3,7 +3,18 @@ import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 const PK_TIMEZONE = 'Asia/Karachi';
-const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const parseTimestamp = (value) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
+  }
+  return new Date(value);
+};
+const formatPkDate = (value, options = {}) => parseTimestamp(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const formatPkDateKey = (value) => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: PK_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(value);
+  return `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}-${parts.find((part) => part.type === 'day').value}`;
+};
+const formatPkMonthKey = (value) => formatPkDateKey(value).slice(0, 7);
 const CHART_COLORS = ['#0f766e', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#65a30d', '#c2410c'];
 
 function pieStops(items, total) {
@@ -22,14 +33,14 @@ export default function Dashboard({ user }) {
   const [weeklySales, setWeeklySales] = useState([]);
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [yearlySales, setYearlySales] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(formatPkMonthKey(new Date()));
   const [selectedMonthSales, setSelectedMonthSales] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const start = new Date();
     start.setDate(start.getDate() - 6);
-    const from = start.toISOString().slice(0, 10);
+    const from = formatPkDateKey(start);
 
     Promise.all([
       api.getSummary().catch(() => []),
@@ -40,7 +51,7 @@ export default function Dashboard({ user }) {
       const days = Array.from({ length: 7 }, (_, index) => {
         const date = new Date();
         date.setDate(date.getDate() - (6 - index));
-        const key = date.toISOString().slice(0, 10);
+        const key = formatPkDateKey(date);
         return {
           key,
           label: date.toLocaleDateString('en-PK', { weekday: 'short', timeZone: PK_TIMEZONE }),
@@ -51,7 +62,7 @@ export default function Dashboard({ user }) {
       });
       const byDay = Object.fromEntries(days.map((day) => [day.key, day]));
       sales.forEach((sale) => {
-        const day = byDay[sale.created_at?.slice(0, 10)];
+        const day = byDay[formatPkDateKey(parseTimestamp(sale.created_at))];
         if (day) {
           day.revenue += Number(sale.total || 0);
           day.count += 1;
@@ -103,7 +114,7 @@ export default function Dashboard({ user }) {
     date.setDate(1);
     date.setMonth(date.getMonth() - index);
     return {
-      value: date.toISOString().slice(0, 7),
+      value: formatPkMonthKey(date),
       label: date.toLocaleDateString('en-PK', { month: 'long', year: 'numeric', timeZone: PK_TIMEZONE }),
     };
   });

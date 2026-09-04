@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 
 const PK_TIMEZONE = 'Asia/Karachi';
-const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const parseTimestamp = (value) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
+  }
+  return new Date(value);
+};
+const formatPkDate = (value, options = {}) => parseTimestamp(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
 
 // ── Branches Tab ──────────────────────────────────────────────
 function BranchesTab() {
