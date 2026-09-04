@@ -53,6 +53,15 @@ async function request(path, options = {}, timeoutMs = 20000) {
   return data;
 }
 
+async function download(path) {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Download failed (HTTP ${res.status})`);
+  }
+  return { blob: await res.blob(), filename: res.headers.get('Content-Disposition')?.match(/filename="?([^";]+)"?/)?.[1] || 'export.xlsx' };
+}
+
 export const api = {
   // ── Auth ─────────────────────────────────────────────
   login: (email, password) =>
@@ -114,6 +123,11 @@ export const api = {
   getYearlySummary: (year) => request(`/sales/monthly-summary?year=${encodeURIComponent(year)}`),
 
   getMonthDailySummary: (month) => request(`/sales/month-daily-summary?month=${encodeURIComponent(month)}`),
+
+  downloadExcelExport: (params = {}) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
+    return download(`/exports/excel${query ? `?${query}` : ''}`);
+  },
 
   markPrinted: (id) =>
     request(`/sales/${id}/mark-printed`, { method: 'POST' }),

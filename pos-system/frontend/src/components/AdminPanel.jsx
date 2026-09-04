@@ -632,6 +632,80 @@ function UsersTab() {
   );
 }
 
+// ── Data Export Tab ──────────────────────────────────────────
+function ExportTab() {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  async function exportData(event) {
+    event.preventDefault();
+    setExporting(true);
+    setMsg(null);
+    try {
+      const result = await api.downloadExcelExport({ from, to });
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setMsg({ type: 'success', text: 'Excel export downloaded successfully.' });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function exportAll() {
+    setFrom('');
+    setTo('');
+    setMsg(null);
+  }
+
+  return (
+    <div>
+      <div className="section-actions">
+        <div>
+          <div className="section-title">Export Data</div>
+          <p style={{ margin: 0 }}>Download database records to an Excel workbook</p>
+        </div>
+      </div>
+
+      {msg && <div className={`status-msg ${msg.type}`} style={{ marginBottom: 16 }}>{msg.text}</div>}
+
+      <div className="card" style={{ maxWidth: 720 }}>
+        <h3 style={{ marginBottom: 8 }}>Choose export range</h3>
+        <p style={{ marginTop: 0, color: 'var(--text-muted)' }}>
+          Leave both dates empty to export all database data. The workbook includes sales, sale items, customers, services, branches, and users.
+        </p>
+        <form onSubmit={exportData}>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="export-from">From date</label>
+              <input id="export-from" className="form-input" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="export-to">To date</label>
+              <input id="export-to" className="form-input" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={exportAll}>All data</button>
+            <button id="export-excel-btn" type="submit" className="btn btn-primary btn-sm" disabled={exporting}>
+              {exporting ? <span className="spinner" /> : '↓ Download Excel'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Admin Panel ───────────────────────────────────────────────
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('branches');
@@ -649,6 +723,7 @@ export default function AdminPanel() {
         <button id="tab-branches" className={`tab${activeTab === 'branches' ? ' active' : ''}`} onClick={() => changeTab('branches')}>🏢 Branches</button>
         <button id="tab-services" className={`tab${activeTab === 'services' ? ' active' : ''}`} onClick={() => changeTab('services')}>🔧 Services</button>
         <button id="tab-users"    className={`tab${activeTab === 'users'    ? ' active' : ''}`} onClick={() => changeTab('users')}>👥 Users</button>
+        <button id="tab-export"   className={`tab${activeTab === 'export'   ? ' active' : ''}`} onClick={() => changeTab('export')}>📥 Export Data</button>
       </div>
 
       {tabLoading ? (
@@ -661,6 +736,7 @@ export default function AdminPanel() {
           {activeTab === 'branches' && <BranchesTab />}
           {activeTab === 'services' && <ServicesTab />}
           {activeTab === 'users' && <UsersTab />}
+          {activeTab === 'export' && <ExportTab />}
         </>
       )}
     </div>
