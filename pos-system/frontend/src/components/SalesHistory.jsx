@@ -60,6 +60,8 @@ export default function SalesHistory({ user }) {
   const [paymentFilter, setPaymentFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState(null);
 
@@ -159,7 +161,7 @@ export default function SalesHistory({ user }) {
     setExporting(true);
     setExportMessage(null);
     try {
-      const result = await api.downloadExcelExport(allData ? {} : { from: fromDate, to: toDate });
+      const result = await api.downloadExcelExport(allData ? {} : { from: exportFrom, to: exportTo });
       const url = URL.createObjectURL(result.blob);
       const link = document.createElement('a');
       link.href = url;
@@ -259,7 +261,15 @@ export default function SalesHistory({ user }) {
               Download Excel using the selected dates, or export all records.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
+            <div>
+              <label className="form-label" htmlFor="sales-export-from">From date</label>
+              <input id="sales-export-from" className="form-input" type="date" value={exportFrom} onChange={(event) => setExportFrom(event.target.value)} />
+            </div>
+            <div>
+              <label className="form-label" htmlFor="sales-export-to">To date</label>
+              <input id="sales-export-to" className="form-input" type="date" value={exportTo} onChange={(event) => setExportTo(event.target.value)} />
+            </div>
             <button className="btn btn-ghost btn-sm" type="button" onClick={() => handleExport(true)} disabled={exporting}>
               All data
             </button>
