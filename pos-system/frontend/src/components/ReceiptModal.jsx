@@ -5,8 +5,14 @@ import { api } from '../api';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 const PK_TIMEZONE = 'Asia/Karachi';
-const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
-const formatPkTime = (value, options = {}) => new Date(value).toLocaleTimeString('en-PK', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit', ...options });
+const parseTimestamp = (value) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
+  }
+  return new Date(value);
+};
+const formatPkDate = (value, options = {}) => parseTimestamp(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const formatPkTime = (value, options = {}) => parseTimestamp(value).toLocaleTimeString('en-PK', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit', ...options });
 
 export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
   const printRef = React.useRef();

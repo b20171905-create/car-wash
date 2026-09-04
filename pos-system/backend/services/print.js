@@ -26,6 +26,14 @@ const commands = {
   feed: (n = 1) => '\n'.repeat(n),
 };
 
+const PK_TIMEZONE = 'Asia/Karachi';
+function parseTimestamp(value) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
+  }
+  return new Date(value);
+}
+
 function buildReceipt({ branch, sale, items }) {
   let r = '';
   r += commands.init;
@@ -37,7 +45,7 @@ function buildReceipt({ branch, sale, items }) {
   if (branch.phone) r += branch.phone + '\n';
   r += commands.feed(1);
   r += `Receipt #${sale.receipt_number}\n`;
-  r += `${new Date(sale.created_at).toLocaleString()}\n`;
+  r += `${parseTimestamp(sale.created_at).toLocaleString('en-PK', { timeZone: PK_TIMEZONE })}\n`;
   const staffName = sale.cashier_name || sale.user_name || sale.created_by_name || 'Staff';
   if (staffName) r += `Served By: ${staffName}\n`;
   r += '--------------------------------\n';

@@ -4,8 +4,14 @@ import ReceiptModal from './ReceiptModal';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 const PK_TIMEZONE = 'Asia/Karachi';
-const formatPkDate = (value, options = {}) => new Date(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
-const formatPkDateTime = (value, options = {}) => new Date(value).toLocaleString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const parseTimestamp = (value) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
+  }
+  return new Date(value);
+};
+const formatPkDate = (value, options = {}) => parseTimestamp(value).toLocaleDateString('en-PK', { timeZone: PK_TIMEZONE, ...options });
+const formatPkDateTime = (value, options = {}) => parseTimestamp(value).toLocaleString('en-PK', { timeZone: PK_TIMEZONE, ...options });
 
 const PAYMENT_LABELS = { cash: '💵 Cash', card: '💳 Card', upi: '🏦 Bank Transfer', wallet: '👛 Wallet', other: '🔖 Other', '': 'All Methods' };
 
