@@ -3,7 +3,7 @@ import { api } from '../api';
 
 const PK_TIMEZONE = 'Asia/Karachi';
 const parseTimestamp = (value) => {
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(value)) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(value)) {
     return new Date(`${value.replace(' ', 'T')}Z`);
   }
   return new Date(value);
