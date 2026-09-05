@@ -1,5 +1,7 @@
 // Central backend — one server shared by all branches
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || (
+  import.meta.env.DEV ? 'http://localhost:4000/api' : 'https://tigercarwash.shop/api'
+);
 
 // Local print agent running on each branch's Windows PC (for thermal ESC/POS)
 const PRINT_AGENT_BASE = import.meta.env.VITE_PRINT_AGENT_BASE || 'http://localhost:9100';
