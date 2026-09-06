@@ -134,6 +134,11 @@ export const api = {
     return download(`/exports/excel${query ? `?${query}` : ''}`);
   },
 
+  getReceiptSettings: () => request('/receipt-settings'),
+
+  updateReceiptSettings: (data) =>
+    request('/receipt-settings', { method: 'PUT', body: JSON.stringify(data) }),
+
   markPrinted: (id) =>
     request(`/sales/${id}/mark-printed`, { method: 'POST' }),
 

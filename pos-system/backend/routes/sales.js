@@ -11,6 +11,7 @@ const {
 const whatsapp = require('../services/whatsapp');
 const printService = require('../services/print');
 const emailService = require('../services/email');
+const receiptSettings = require('../services/receiptSettings');
 
 const router = express.Router();
 // All /api/sales routes require a valid JWT
@@ -135,11 +136,12 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
     WHERE s.id = ?
   `).get(saleId);
 
+  const settings = await receiptSettings.get();
   res.status(201).json({
     sale,
     items: resolvedItems,
     branch,
-    receipt_print_payload: printService.buildReceipt({ branch, sale, items: resolvedItems }),
+    receipt_print_payload: printService.buildReceipt({ branch, sale, items: resolvedItems, settings }),
   });
 
   sendPostSaleNotifications(sale, branch, resolvedItems, customer).catch((err) =>
@@ -357,11 +359,12 @@ router.get('/:id', requireBranchManager, async (req, res, next) => {
     address: sale.branch_address,
     phone: sale.branch_phone,
   };
+  const settings = await receiptSettings.get();
   res.json({
     sale,
     items,
     branch,
-    receipt_print_payload: printService.buildReceipt({ branch, sale, items }),
+    receipt_print_payload: printService.buildReceipt({ branch, sale, items, settings }),
   });
   } catch (error) {
     next(error);
@@ -416,7 +419,7 @@ router.put('/:id/slip', requireOwner, async (req, res, next) => {
       sale: updatedSale,
       items,
       branch,
-      receipt_print_payload: printService.buildReceipt({ branch, sale: updatedSale, items }),
+      receipt_print_payload: printService.buildReceipt({ branch, sale: updatedSale, items, settings: await receiptSettings.get() }),
     });
   } catch (error) {
     next(error);

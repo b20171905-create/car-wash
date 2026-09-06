@@ -4,6 +4,7 @@ import Checkout from './components/Checkout.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import SalesHistory from './components/SalesHistory.jsx';
+import SlipSettings from './components/SlipSettings.jsx';
 import './styles.css';
 
 const NAV_ITEMS = [
@@ -11,12 +12,14 @@ const NAV_ITEMS = [
   { key: 'checkout', icon: '🛒', label: 'Checkout', roles: ['branch_manager', 'cashier'] },
   { key: 'dashboard', icon: '📊', label: 'Sales Analysis', roles: ['owner', 'branch_manager'] },
   { key: 'history', icon: '📋', label: 'Sales History', roles: ['owner', 'branch_manager'] },
+  { key: 'slip-settings', icon: '🧾', label: 'Slip Settings', roles: ['owner'] },
 ];
 
 const PAGE_META = {
   checkout: { title: 'Point of Sale', subtitle: 'Select services, process payment, print receipt' },
   dashboard: { title: 'Sales Analysis', subtitle: 'Revenue overview across all branches' },
   history: { title: 'Sales History', subtitle: 'Browse, filter and reprint past receipts' },
+  'slip-settings': { title: 'Slip Settings', subtitle: 'Set paper width, margins and receipt alignment' },
   admin: { title: 'Administration', subtitle: 'Manage branches, services and staff accounts' },
 };
 
@@ -198,6 +201,7 @@ export default function App() {
               {view === 'checkout' && <Checkout user={user} />}
               {view === 'dashboard' && <Dashboard user={user} />}
               {view === 'history' && <SalesHistory user={user} />}
+              {view === 'slip-settings' && user.role === 'owner' && <SlipSettings />}
               {view === 'admin' && user.role === 'owner' && <AdminPanel />}
             </>
           )}
