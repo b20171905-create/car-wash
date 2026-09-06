@@ -7,7 +7,7 @@
 //      "Generic / Text Only" printer so ESC/POS bytes pass through untouched.
 //   2. npm install
 //   3. Set PRINTER_INTERFACE below to your printer's Windows share name,
-//      e.g. "printer:POS-58" (must match the shared printer name in Windows).
+//      e.g. "printer:Black Copper 80" (must match the Windows printer name).
 //   4. npm start  (keep this running in the background, or set up as a
 //      Windows service / startup task so it launches on boot)
 
@@ -16,7 +16,7 @@ const cors = require('cors');
 const { execFile } = require('child_process');
 const { printer: ThermalPrinter, types: PrinterTypes } = require('node-thermal-printer');
 
-const PRINTER_INTERFACE = process.env.PRINTER_INTERFACE || 'printer:POS-58'; // Windows shared printer name
+const PRINTER_INTERFACE = process.env.PRINTER_INTERFACE || 'printer:Black Copper 80'; // Windows printer name
 const AGENT_PORT = process.env.AGENT_PORT || 9100;
 
 const app = express();
@@ -25,38 +25,43 @@ app.use(express.json({ limit: '2mb' }));
 
 function printWindowsRaw(printerName, buffer) {
   return new Promise((resolve, reject) => {
+    const csharp = `using System;
+using System.Runtime.InteropServices;
+public static class RawPrinter {
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] public class DOCINFO { public string pDocName; public string pOutputFile; public string pDataType; }
+  [DllImport("winspool.drv", EntryPoint="OpenPrinterW", SetLastError=true, CharSet=CharSet.Unicode)] public static extern bool OpenPrinter(string name, out IntPtr handle, IntPtr defaults);
+  [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr handle);
+  [DllImport("winspool.drv", CharSet=CharSet.Unicode)] public static extern int StartDocPrinter(IntPtr handle, int level, DOCINFO info);
+  [DllImport("winspool.drv")] public static extern bool EndDocPrinter(IntPtr handle);
+  [DllImport("winspool.drv")] public static extern bool StartPagePrinter(IntPtr handle);
+  [DllImport("winspool.drv")] public static extern bool EndPagePrinter(IntPtr handle);
+  [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr handle, byte[] data, int count, out int written);
+  public static void Send(string name, byte[] data) {
+    IntPtr handle;
+    if (!OpenPrinter(name, out handle, IntPtr.Zero)) throw new Exception("Could not open printer: " + name);
+    try {
+      var info = new DOCINFO { pDocName = "Tiger Car Wash Receipt", pDataType = "RAW" };
+      if (StartDocPrinter(handle, 1, info) == 0) throw new Exception("Could not start print job");
+      try {
+        if (!StartPagePrinter(handle)) throw new Exception("Could not start printer page");
+        try { int written; if (!WritePrinter(handle, data, data.Length, out written) || written != data.Length) throw new Exception("Printer did not accept all receipt data"); }
+        finally { EndPagePrinter(handle); }
+      } finally { EndDocPrinter(handle); }
+    } finally { ClosePrinter(handle); }
+  }
+}`;
     const script = `
-      Add-Type @'
-      using System;
-      using System.Runtime.InteropServices;
-      public static class RawPrinter {
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] public class DOCINFO { public string pDocName; public string pOutputFile; public string pDataType; }
-        [DllImport("winspool.drv", EntryPoint="OpenPrinterW", SetLastError=true, CharSet=CharSet.Unicode)] public static extern bool OpenPrinter(string name, out IntPtr handle, IntPtr defaults);
-        [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr handle);
-        [DllImport("winspool.drv", CharSet=CharSet.Unicode)] public static extern int StartDocPrinter(IntPtr handle, int level, DOCINFO info);
-        [DllImport("winspool.drv")] public static extern bool EndDocPrinter(IntPtr handle);
-        [DllImport("winspool.drv")] public static extern bool StartPagePrinter(IntPtr handle);
-        [DllImport("winspool.drv")] public static extern bool EndPagePrinter(IntPtr handle);
-        [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr handle, byte[] data, int count, out int written);
-        public static void Send(string name, byte[] data) {
-          IntPtr handle;
-          if (!OpenPrinter(name, out handle, IntPtr.Zero)) throw new Exception("Could not open printer: " + name);
-          try {
-            var info = new DOCINFO { pDocName = "Tiger Car Wash Receipt", pDataType = "RAW" };
-            if (StartDocPrinter(handle, 1, info) == 0) throw new Exception("Could not start print job");
-            try { if (!StartPagePrinter(handle)) throw new Exception("Could not start printer page"); try { int written; if (!WritePrinter(handle, data, data.Length, out written) || written != data.Length) throw new Exception("Printer did not accept all receipt data"); } finally { EndPagePrinter(handle); } } finally { EndDocPrinter(handle); }
-          } finally { ClosePrinter(handle); }
-        }
-      }
-      '@
-      [RawPrinter]::Send($env:PRINT_AGENT_PRINTER_NAME, [Convert]::FromBase64String($env:PRINT_AGENT_PAYLOAD))
-    `;
+$csharp = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:PRINT_AGENT_CSHARP))
+Add-Type -TypeDefinition $csharp
+[RawPrinter]::Send($env:PRINT_AGENT_PRINTER_NAME, [Convert]::FromBase64String($env:PRINT_AGENT_PAYLOAD))
+`;
     const encoded = Buffer.from(script, 'utf16le').toString('base64');
     execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], {
       env: {
         ...process.env,
         PRINT_AGENT_PRINTER_NAME: printerName,
         PRINT_AGENT_PAYLOAD: buffer.toString('base64'),
+        PRINT_AGENT_CSHARP: Buffer.from(csharp, 'utf8').toString('base64'),
       },
     }, (error, stdout, stderr) => {
       if (error) reject(new Error(stderr.trim() || error.message));

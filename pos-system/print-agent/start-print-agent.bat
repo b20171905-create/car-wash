@@ -7,7 +7,7 @@ if not exist node_modules\express (
   pause
   exit /b 1
 )
-if not defined PRINTER_INTERFACE set "PRINTER_INTERFACE=printer:POS-58"
+if not defined PRINTER_INTERFACE set "PRINTER_INTERFACE=printer:Black Copper 80"
 echo Starting Tiger Car Wash print helper...
 echo Printer: %PRINTER_INTERFACE%
 echo Keep this window open while using the POS.

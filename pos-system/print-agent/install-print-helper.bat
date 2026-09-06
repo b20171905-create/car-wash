@@ -36,8 +36,8 @@ if errorlevel 1 (
   exit /b 1
 )
 
-set /p PRINTER_NAME=Enter the exact Windows printer name (default: POS-58): 
-if "%PRINTER_NAME%"=="" set "PRINTER_NAME=POS-58"
+set /p PRINTER_NAME=Enter the exact Windows printer name (default: Black Copper 80): 
+if "%PRINTER_NAME%"=="" set "PRINTER_NAME=Black Copper 80"
 >printer-config.bat echo @echo off
 >>printer-config.bat echo set "PRINTER_INTERFACE=printer:%PRINTER_NAME%"
 >>printer-config.bat echo call "%%~dp0start-print-agent.bat"
