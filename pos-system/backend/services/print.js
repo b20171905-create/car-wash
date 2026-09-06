@@ -46,7 +46,6 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.doubleHeightOff + commands.boldOff;
   if (branch.address) r += branch.address + '\n';
   if (branch.phone) r += branch.phone + '\n';
-  r += commands.feed(1);
   if (sale.customer_name) r += `Customer: ${sale.customer_name}\n`;
   if (sale.vehicle_number) r += `Vehicle: ${sale.vehicle_number}\n`;
   r += `Receipt #${sale.receipt_number}\n`;
@@ -75,7 +74,7 @@ function buildReceipt({ branch, sale, items }) {
   r += 'Thank you for choosing\n';
   r += `${branch.name}\n`;
   r += 'Come back again\n';
-  r += commands.feed(3);
+  r += commands.feed(1);
   r += commands.cut;
 
   return Buffer.from(r, 'binary').toString('base64');
