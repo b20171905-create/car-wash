@@ -13,6 +13,9 @@
 
 const ESC = '\x1b';
 const GS = '\x1d';
+const RECEIPT_COLUMNS = 32;
+const AMOUNT_COLUMNS = 11;
+const LABEL_COLUMNS = RECEIPT_COLUMNS - AMOUNT_COLUMNS;
 
 const commands = {
   init: ESC + '@',
@@ -44,6 +47,8 @@ function buildReceipt({ branch, sale, items }) {
   if (branch.address) r += branch.address + '\n';
   if (branch.phone) r += branch.phone + '\n';
   r += commands.feed(1);
+  if (sale.customer_name) r += `Customer: ${sale.customer_name}\n`;
+  if (sale.vehicle_number) r += `Vehicle: ${sale.vehicle_number}\n`;
   r += `Receipt #${sale.receipt_number}\n`;
   r += `${parseTimestamp(sale.created_at).toLocaleString('en-PK', { timeZone: PK_TIMEZONE })}\n`;
   const staffName = sale.cashier_name || sale.user_name || sale.created_by_name || 'Staff';
@@ -52,22 +57,24 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.left;
 
   for (const item of items) {
-    const name = String(item.service_name || 'Service').padEnd(20).slice(0, 20);
+    const name = String(item.service_name || 'Service').padEnd(17).slice(0, 17);
     const qty = `x${Number(item.quantity || 0)}`.padEnd(4);
-    const amt = `Rs. ${Number(item.line_total || 0).toFixed(2)}`.padStart(10);
+    const amt = `Rs. ${Number(item.line_total || 0).toFixed(2)}`.padStart(AMOUNT_COLUMNS);
     r += `${name}${qty}${amt}\n`;
   }
 
-  r += '--------------------------------\n';
-  if (Number(sale.discount || 0) > 0) r += 'Discount:'.padEnd(24) + `-Rs. ${Number(sale.discount).toFixed(2)}\n`;
-  if (Number(sale.tax || 0) > 0) r += 'Tax:'.padEnd(24) + `Rs. ${Number(sale.tax).toFixed(2)}\n`;
+  r += '-'.repeat(RECEIPT_COLUMNS) + '\n';
+  if (Number(sale.discount || 0) > 0) r += 'Discount:'.padEnd(LABEL_COLUMNS) + `-Rs. ${Number(sale.discount).toFixed(2)}`.padStart(AMOUNT_COLUMNS) + '\n';
+  if (Number(sale.tax || 0) > 0) r += 'Tax:'.padEnd(LABEL_COLUMNS) + `Rs. ${Number(sale.tax).toFixed(2)}`.padStart(AMOUNT_COLUMNS) + '\n';
   r += commands.boldOn;
-  r += 'TOTAL:'.padEnd(24) + `Rs. ${Number(sale.total || 0).toFixed(2)}\n`;
+  r += 'TOTAL:'.padEnd(LABEL_COLUMNS) + `Rs. ${Number(sale.total || 0).toFixed(2)}`.padStart(AMOUNT_COLUMNS) + '\n';
   r += commands.boldOff;
   r += `Paid via: ${sale.payment_method === 'upi' ? 'BANK TRANSFER' : sale.payment_method.toUpperCase()}\n`;
   r += commands.feed(1);
   r += commands.center;
-  r += 'Thank you for your visit!\n';
+  r += 'Thank you for choosing\n';
+  r += `${branch.name}\n`;
+  r += 'Come back again\n';
   r += commands.feed(3);
   r += commands.cut;
 
