@@ -136,12 +136,18 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
     WHERE s.id = ?
   `).get(saleId);
 
+  const receiptSale = {
+    ...sale,
+    customer_name: customer.name.trim(),
+    vehicle_number: customer.vehicle_number.trim(),
+    vehicle_model: customer.vehicle_model || '',
+  };
   const settings = await receiptSettings.get();
   res.status(201).json({
     sale: receiptSale,
     items: resolvedItems,
     branch,
-    receipt_print_payload: printService.buildReceipt({ branch, sale, items: resolvedItems, settings }),
+    receipt_print_payload: printService.buildReceipt({ branch, sale: receiptSale, items: resolvedItems, settings }),
   });
 
   sendPostSaleNotifications(sale, branch, resolvedItems, customer).catch((err) =>
