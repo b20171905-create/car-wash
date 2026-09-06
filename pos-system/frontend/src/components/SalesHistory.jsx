@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import ReceiptModal from './ReceiptModal';
-import SlipEditorModal from './SlipEditorModal';
 
 const PKR = (n) => `Rs. ${Number(n).toFixed(0)}`;
 const PK_TIMEZONE = 'Asia/Karachi';
@@ -30,7 +29,6 @@ export default function SalesHistory({ user }) {
   const [reprinting, setReprinting] = useState(null);
   const [receiptData, setReceiptData] = useState(null);
   const [receiptAction, setReceiptAction] = useState(null);
-  const [slipEditorData, setSlipEditorData] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
   const [actionMenuDirection, setActionMenuDirection] = useState('down');
   const closeActionTimerRef = useRef(null);
@@ -143,18 +141,6 @@ export default function SalesHistory({ user }) {
       setReceiptAction(action);
     } catch (e) {
       alert('Could not load receipt: ' + e.message);
-    } finally {
-      setReprinting(null);
-    }
-  }
-
-  async function handleEditSlip(saleId) {
-    if (reprinting && reprinting === saleId) return;
-    setReprinting(saleId);
-    try {
-      setSlipEditorData(await api.getSale(saleId));
-    } catch (e) {
-      alert('Could not load slip: ' + e.message);
     } finally {
       setReprinting(null);
     }
@@ -379,9 +365,6 @@ export default function SalesHistory({ user }) {
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id, 'print'); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '🖨️ Print'}
                               </button>
-                              <button onClick={() => { setOpenActionId(null); handleEditSlip(s.id); }} disabled={reprinting === s.id}>
-                                {reprinting === s.id ? '⏳ Loading...' : '✏️ Edit Slip'}
-                              </button>
                               <button className="danger" onClick={() => { setOpenActionId(null); handleDelete(s); }}>🗑 Delete</button>
                             </div>
                           )}
@@ -398,18 +381,6 @@ export default function SalesHistory({ user }) {
 
       {receiptData && (
         <ReceiptModal saleData={receiptData} autoAction={receiptAction} onClose={() => { setReceiptData(null); setReceiptAction(null); }} />
-      )}
-      {slipEditorData && (
-        <SlipEditorModal
-          saleData={slipEditorData}
-          onClose={() => setSlipEditorData(null)}
-          onSaved={(updated) => {
-            setSlipEditorData(null);
-            setSales((current) => current.map((sale) => sale.id === updated.sale.id ? { ...sale, ...updated.sale } : sale));
-            setReceiptData(updated);
-            setReceiptAction(null);
-          }}
-        />
       )}
     </div>
   );
