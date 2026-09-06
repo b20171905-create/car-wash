@@ -138,7 +138,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
 
   const settings = await receiptSettings.get();
   res.status(201).json({
-    sale,
+    sale: receiptSale,
     items: resolvedItems,
     branch,
     receipt_print_payload: printService.buildReceipt({ branch, sale, items: resolvedItems, settings }),
