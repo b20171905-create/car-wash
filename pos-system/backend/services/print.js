@@ -25,7 +25,6 @@ const commands = {
   left: ESC + 'a' + '\x00',
   doubleHeightOn: GS + '!' + '\x11',
   doubleHeightOff: GS + '!' + '\x00',
-  cut: GS + 'V' + '\x00',
   feed: (n = 1) => '\n'.repeat(n),
 };
 
@@ -75,8 +74,7 @@ function buildReceipt({ branch, sale, items }) {
   r += 'Thank you for choosing\n';
   r += `${branch.name}\n`;
   r += 'Come back again\n';
-  r += commands.feed(3);
-  r += commands.cut;
+  r += commands.feed(5);
 
   return Buffer.from(r, 'binary').toString('base64');
 }
