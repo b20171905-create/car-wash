@@ -368,6 +368,61 @@ router.get('/:id', requireBranchManager, async (req, res, next) => {
   }
 });
 
+// PUT /api/sales/:id/slip - update receipt-visible customer/payment fields
+router.put('/:id/slip', requireOwner, async (req, res, next) => {
+  try {
+    const { name = '', phone = '', vehicle_type = '', vehicle_number = '', vehicle_model = '', payment_method } = req.body;
+    const sale = await db.prepare('SELECT id, customer_id, branch_id FROM sales WHERE id = ?').get(req.params.id);
+    if (!sale) return res.status(404).json({ error: 'Sale not found' });
+    if (!['cash', 'card', 'upi', 'wallet', 'other'].includes(payment_method)) {
+      return res.status(400).json({ error: 'A valid payment method is required' });
+    }
+    if (!name.trim() || !phone.trim() || !vehicle_number.trim() || !vehicle_type) {
+      return res.status(400).json({ error: 'Customer name, phone, vehicle type, and vehicle number are required' });
+    }
+    if (!['bike', 'car', 'rikshaw', 'suv', 'coaster', 'truck'].includes(vehicle_type)) {
+      return res.status(400).json({ error: 'A valid vehicle type is required' });
+    }
+
+    const updateSlip = db.transaction(async (transactionDb) => {
+      if (sale.customer_id) {
+        await transactionDb.prepare(
+          'UPDATE customers SET name = ?, phone = ?, vehicle_type = ?, vehicle_number = ?, vehicle_model = ? WHERE id = ?'
+        ).run(name.trim(), phone.trim(), vehicle_type, vehicle_number.trim(), vehicle_model.trim(), sale.customer_id);
+      } else {
+        const customerId = uuid();
+        await transactionDb.prepare(
+          'INSERT INTO customers (id, name, phone, vehicle_type, vehicle_number, vehicle_model) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(customerId, name.trim(), phone.trim(), vehicle_type, vehicle_number.trim(), vehicle_model.trim());
+        await transactionDb.prepare('UPDATE sales SET customer_id = ? WHERE id = ?').run(customerId, sale.id);
+      }
+      await transactionDb.prepare('UPDATE sales SET payment_method = ? WHERE id = ?').run(payment_method, sale.id);
+    });
+    await updateSlip();
+
+    const updatedSale = await db.prepare(`
+      SELECT s.*, b.name as branch_name, b.address as branch_address, b.phone as branch_phone,
+             c.name as customer_name, c.phone as customer_phone, c.vehicle_type,
+             c.vehicle_number, c.vehicle_model, u.name as cashier_name
+      FROM sales s
+      JOIN branches b ON b.id = s.branch_id
+      LEFT JOIN customers c ON c.id = s.customer_id
+      LEFT JOIN users u ON u.id = s.user_id
+      WHERE s.id = ?
+    `).get(sale.id);
+    const items = await db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(sale.id);
+    const branch = { name: updatedSale.branch_name, address: updatedSale.branch_address, phone: updatedSale.branch_phone };
+    res.json({
+      sale: updatedSale,
+      items,
+      branch,
+      receipt_print_payload: printService.buildReceipt({ branch, sale: updatedSale, items }),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // DELETE /api/sales/:id - owner/admin only
 router.delete('/:id', requireOwner, async (req, res, next) => {
   try {

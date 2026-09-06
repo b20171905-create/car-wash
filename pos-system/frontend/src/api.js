@@ -116,6 +116,9 @@ export const api = {
 
   getSale: (id) => request(`/sales/${id}`),
 
+  updateSaleSlip: (id, data) =>
+    request(`/sales/${id}/slip`, { method: 'PUT', body: JSON.stringify(data) }),
+
   deleteSale: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
 
   getSummary: () => request('/sales/summary'),
