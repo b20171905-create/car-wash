@@ -46,13 +46,17 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.doubleHeightOff + commands.boldOff;
   if (branch.address) r += branch.address + '\n';
   if (branch.phone) r += branch.phone + '\n';
-  if (sale.customer_name) r += `Customer: ${sale.customer_name}\n`;
-  if (sale.vehicle_number) r += `Vehicle: ${sale.vehicle_number}\n`;
-  r += `Receipt #${sale.receipt_number}\n`;
-  r += `${parseTimestamp(sale.created_at).toLocaleString('en-PK', { timeZone: PK_TIMEZONE })}\n`;
+  const customerVehicle = [
+    sale.customer_name && `C: ${sale.customer_name}`,
+    sale.vehicle_number && `V: ${sale.vehicle_number}`,
+  ].filter(Boolean).join(' ');
+  if (customerVehicle) r += `${customerVehicle}\n`;
+  const receiptDate = parseTimestamp(sale.created_at);
+  const dateText = receiptDate.toLocaleDateString('en-GB', { timeZone: PK_TIMEZONE, day: '2-digit', month: '2-digit', year: '2-digit' });
+  const timeText = receiptDate.toLocaleTimeString('en-US', { timeZone: PK_TIMEZONE, hour: '2-digit', minute: '2-digit' });
+  r += `Receipt #${sale.receipt_number} ${dateText} ${timeText}\n`;
   const staffName = sale.cashier_name || sale.user_name || sale.created_by_name || 'Staff';
   if (staffName) r += `Served By: ${staffName}\n`;
-  r += '--------------------------------\n';
   r += commands.left;
 
   for (const item of items) {
