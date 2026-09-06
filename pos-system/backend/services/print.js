@@ -13,8 +13,8 @@
 
 const ESC = '\x1b';
 const GS = '\x1d';
-const RECEIPT_COLUMNS = 32;
-const AMOUNT_COLUMNS = 11;
+const RECEIPT_COLUMNS = 42;
+const AMOUNT_COLUMNS = 12;
 const LABEL_COLUMNS = RECEIPT_COLUMNS - AMOUNT_COLUMNS;
 
 const commands = {
@@ -25,6 +25,7 @@ const commands = {
   left: ESC + 'a' + '\x00',
   doubleHeightOn: GS + '!' + '\x11',
   doubleHeightOff: GS + '!' + '\x00',
+  cut: GS + 'V' + '\x00',
   feed: (n = 1) => '\n'.repeat(n),
 };
 
@@ -56,7 +57,7 @@ function buildReceipt({ branch, sale, items }) {
   r += commands.left;
 
   for (const item of items) {
-    const name = String(item.service_name || 'Service').padEnd(17).slice(0, 17);
+    const name = String(item.service_name || 'Service').padEnd(RECEIPT_COLUMNS - AMOUNT_COLUMNS - 4).slice(0, RECEIPT_COLUMNS - AMOUNT_COLUMNS - 4);
     const qty = `x${Number(item.quantity || 0)}`.padEnd(4);
     const amt = `Rs. ${Number(item.line_total || 0).toFixed(2)}`.padStart(AMOUNT_COLUMNS);
     r += `${name}${qty}${amt}\n`;
@@ -74,7 +75,8 @@ function buildReceipt({ branch, sale, items }) {
   r += 'Thank you for choosing\n';
   r += `${branch.name}\n`;
   r += 'Come back again\n';
-  r += commands.feed(5);
+  r += commands.feed(3);
+  r += commands.cut;
 
   return Buffer.from(r, 'binary').toString('base64');
 }
