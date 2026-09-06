@@ -1,9 +1,9 @@
 const express = require('express');
-const { requireOwner } = require('../services/auth');
+const { requireAuth, requireOwner } = require('../services/auth');
 const receiptSettings = require('../services/receiptSettings');
 
 const router = express.Router();
-router.use(requireOwner);
+router.use(requireAuth, requireOwner);
 
 router.get('/', async (req, res, next) => {
   try {
