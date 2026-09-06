@@ -33,8 +33,6 @@ public static class RawPrinter {
   [DllImport("winspool.drv", SetLastError=true)] public static extern bool ClosePrinter(IntPtr handle);
   [DllImport("winspool.drv", CharSet=CharSet.Unicode)] public static extern int StartDocPrinter(IntPtr handle, int level, DOCINFO info);
   [DllImport("winspool.drv")] public static extern bool EndDocPrinter(IntPtr handle);
-  [DllImport("winspool.drv")] public static extern bool StartPagePrinter(IntPtr handle);
-  [DllImport("winspool.drv")] public static extern bool EndPagePrinter(IntPtr handle);
   [DllImport("winspool.drv", SetLastError=true)] public static extern bool WritePrinter(IntPtr handle, byte[] data, int count, out int written);
   public static void Send(string name, byte[] data) {
     IntPtr handle;
@@ -42,11 +40,8 @@ public static class RawPrinter {
     try {
       var info = new DOCINFO { pDocName = "Tiger Car Wash Receipt", pDataType = "RAW" };
       if (StartDocPrinter(handle, 1, info) == 0) throw new Exception("Could not start print job");
-      try {
-        if (!StartPagePrinter(handle)) throw new Exception("Could not start printer page");
-        try { int written; if (!WritePrinter(handle, data, data.Length, out written) || written != data.Length) throw new Exception("Printer did not accept all receipt data"); }
-        finally { EndPagePrinter(handle); }
-      } finally { EndDocPrinter(handle); }
+      try { int written; if (!WritePrinter(handle, data, data.Length, out written) || written != data.Length) throw new Exception("Printer did not accept all receipt data"); }
+      finally { EndDocPrinter(handle); }
     } finally { ClosePrinter(handle); }
   }
 }`;
