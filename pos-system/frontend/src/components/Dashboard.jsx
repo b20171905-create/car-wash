@@ -30,6 +30,7 @@ function pieStops(items, total) {
 
 export default function Dashboard({ user }) {
   const [summary, setSummary] = useState([]);
+  const [recentSales, setRecentSales] = useState([]);
   const [weeklySales, setWeeklySales] = useState([]);
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [yearlySales, setYearlySales] = useState([]);
@@ -48,6 +49,7 @@ export default function Dashboard({ user }) {
       api.getMonthlySummary().catch(() => []),
     ]).then(([s, sales, monthly]) => {
       setSummary(s);
+      setRecentSales(sales);
       const days = Array.from({ length: 7 }, (_, index) => {
         const date = new Date();
         date.setDate(date.getDate() - (6 - index));
@@ -108,6 +110,25 @@ export default function Dashboard({ user }) {
     count: summary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
   }));
   const dailyVehicleRevenueTotal = dailyVehicleSales.reduce((total, vehicle) => total + vehicle.dailyRevenue, 0);
+  const paymentOptions = [
+    { id: 'cash', label: 'Cash', color: '#0f766e' },
+    { id: 'card', label: 'Card', color: '#2563eb' },
+    { id: 'upi', label: 'Bank Transfer', color: '#d97706' },
+    { id: 'wallet', label: 'Wallet', color: '#7c3aed' },
+    { id: 'other', label: 'Other', color: '#64748b' },
+  ];
+  const todayKey = formatPkDateKey(new Date());
+  const dailyPaymentSales = paymentOptions.map((payment) => {
+    const paymentSales = recentSales.filter((sale) => (
+      formatPkDateKey(parseTimestamp(sale.created_at)) === todayKey && sale.payment_method === payment.id
+    ));
+    return {
+      ...payment,
+      dailyRevenue: paymentSales.reduce((total, sale) => total + Number(sale.total || 0), 0),
+      count: paymentSales.length,
+    };
+  });
+  const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
   const weeklyMax = Math.max(...weeklySales.map((day) => day.revenue), 0);
   const monthOptions = Array.from({ length: 12 }, (_, index) => {
     const date = new Date();
@@ -243,6 +264,28 @@ export default function Dashboard({ user }) {
                       <span className="daily-pie-swatch" style={{ background: vehicle.color }} />
                       <span className="daily-pie-branch">{vehicle.label}</span>
                       <strong>{PKR(vehicle.dailyRevenue)} · {vehicle.count} sales</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+          <section className="daily-pie-section">
+            <div style={{ marginBottom: 14 }}>
+              <h3>Daily Sales by Payment</h3>
+              <p>Today&apos;s revenue grouped by payment method</p>
+            </div>
+            {dailyPaymentRevenueTotal === 0 ? (
+              <div className="empty-state"><div className="empty-icon">💳</div><div className="empty-title">No payment sales today</div></div>
+            ) : (
+              <div className="daily-pie-layout">
+                <div className="daily-pie-chart" style={{ background: `conic-gradient(${pieStops(dailyPaymentSales, dailyPaymentRevenueTotal).join(', ')})` }} aria-label={`Daily payment sales total ${PKR(dailyPaymentRevenueTotal)}`} />
+                <div className="daily-pie-legend">
+                  {dailyPaymentSales.map((payment) => (
+                    <div className="daily-pie-legend-item" key={payment.id}>
+                      <span className="daily-pie-swatch" style={{ background: payment.color }} />
+                      <span className="daily-pie-branch">{payment.label}</span>
+                      <strong>{PKR(payment.dailyRevenue)} · {payment.count} sales</strong>
                     </div>
                   ))}
                 </div>
