@@ -1447,7 +1447,7 @@ input:focus {
 .action-menu-dropdown {
   position: absolute;
   top: 50%;
-  right: calc(100% + 8px);
+  right: calc(100% + 2px);
   transform: translateY(-50%);
   z-index: 60;
   min-width: 140px;
