@@ -558,6 +558,17 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   font-size: 11px;
 }
 
+.hourly-chart-value-label,
+.hourly-chart-point-value {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.hourly-chart-point-value {
+  fill: var(--text);
+  font-size: 9px;
+}
+
 /* Keep the full 24-hour axis readable on narrow screens. */
 .hourly-line-chart-wrap {
   overflow-x: auto;

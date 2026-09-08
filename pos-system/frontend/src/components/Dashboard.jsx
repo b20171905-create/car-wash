@@ -143,7 +143,7 @@ export default function Dashboard({ user }) {
   const hourlyMax = Math.max(...hourlySales.map((item) => item.revenue), 0);
   const hourlyChartWidth = 960;
   const hourlyChartHeight = 250;
-  const hourlyChartPadding = { top: 22, right: 18, bottom: 42, left: 18 };
+  const hourlyChartPadding = { top: 22, right: 18, bottom: 42, left: 72 };
   const hourlyPlotWidth = hourlyChartWidth - hourlyChartPadding.left - hourlyChartPadding.right;
   const hourlyPlotHeight = hourlyChartHeight - hourlyChartPadding.top - hourlyChartPadding.bottom;
   const hourlyPoints = hourlySales.map((item, index) => ({
@@ -257,7 +257,13 @@ export default function Dashboard({ user }) {
             <svg className="hourly-line-chart" viewBox={`0 0 ${hourlyChartWidth} ${hourlyChartHeight}`} role="img" aria-label="Hourly sales analysis for all 24 hours">
               {[0, 0.5, 1].map((ratio) => {
                 const y = hourlyChartPadding.top + hourlyPlotHeight * ratio;
-                return <line key={ratio} x1={hourlyChartPadding.left} x2={hourlyChartWidth - hourlyChartPadding.right} y1={y} y2={y} className="monthly-chart-grid" />;
+                const value = hourlyMax * (1 - ratio);
+                return (
+                  <g key={ratio}>
+                    <line x1={hourlyChartPadding.left} x2={hourlyChartWidth - hourlyChartPadding.right} y1={y} y2={y} className="monthly-chart-grid" />
+                    <text x={hourlyChartPadding.left - 8} y={y + 4} textAnchor="end" className="hourly-chart-value-label">{PKR(value)}</text>
+                  </g>
+                );
               })}
               <polyline points={hourlyLinePoints} className="hourly-chart-line" />
               {hourlyPoints.map((point) => (
@@ -265,6 +271,7 @@ export default function Dashboard({ user }) {
                   <circle cx={point.x} cy={point.y} r="4" className="hourly-chart-point">
                     <title>{`${point.label}: ${PKR(point.revenue)} (${point.count} sales)`}</title>
                   </circle>
+                  {point.revenue > 0 && <text x={point.x} y={Math.max(point.y - 9, 12)} textAnchor="middle" className="hourly-chart-point-value">{PKR(point.revenue)}</text>}
                   <text x={point.x} y={hourlyChartHeight - 16} textAnchor="middle" className="hourly-chart-label">{point.label}</text>
                 </g>
               ))}
