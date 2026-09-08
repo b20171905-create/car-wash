@@ -372,6 +372,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 .account-menu-item:hover {
   background: var(--surface-hover);
+  color: var(--teal-light);
+  transform: translateX(2px);
 }
 
 .top-bar-account .user-chip {
