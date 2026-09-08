@@ -127,6 +127,20 @@ export default function Dashboard({ user }) {
     };
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
+  const hourlySales = Array.from({ length: 13 }, (_, hour) => {
+    const salesAtHour = recentSales.filter((sale) => {
+      const saleDate = parseTimestamp(sale.created_at);
+      const hourText = new Intl.DateTimeFormat('en-GB', { timeZone: PK_TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(saleDate);
+      return formatPkDateKey(saleDate) === todayKey && Number(hourText) === hour;
+    });
+    return {
+      hour,
+      label: `${String(hour).padStart(2, '0')}:00`,
+      revenue: salesAtHour.reduce((total, sale) => total + Number(sale.total || 0), 0),
+      count: salesAtHour.length,
+    };
+  });
+  const hourlyMax = Math.max(...hourlySales.map((item) => item.revenue), 0);
   const weeklyMax = Math.max(...weeklySales.map((day) => day.revenue), 0);
   const monthOptions = Array.from({ length: 12 }, (_, index) => {
     const date = new Date();
@@ -223,6 +237,24 @@ export default function Dashboard({ user }) {
       </div>
 
       <div className="card daily-analysis-card">
+        <div className="hourly-analysis-section">
+          <div style={{ marginBottom: 14 }}>
+            <h3>Hourly Sales Analysis</h3>
+            <p>Today&apos;s revenue from 00:00 to 12:00</p>
+          </div>
+          <div className="hourly-sales-chart" aria-label="Hourly sales analysis from midnight to noon">
+            {hourlySales.map((item) => (
+              <div className="hourly-sales-column" key={item.hour} title={`${item.label}: ${PKR(item.revenue)}, ${item.count} sales`}>
+                <div className="hourly-sales-value">{item.revenue ? PKR(item.revenue) : 'Rs. 0'}</div>
+                <div className="hourly-sales-track">
+                  <div className="hourly-sales-bar" style={{ height: hourlyMax ? `${Math.max((item.revenue / hourlyMax) * 100, item.revenue ? 4 : 0)}%` : 0 }} />
+                </div>
+                <strong>{item.label}</strong>
+                <span>{item.count} sales</span>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="daily-pie-charts">
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>

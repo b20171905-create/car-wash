@@ -520,6 +520,63 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   margin-bottom: 20px;
 }
 
+.hourly-analysis-section {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hourly-sales-chart {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(48px, 1fr));
+  gap: 10px;
+  min-height: 220px;
+  align-items: end;
+  overflow-x: auto;
+  padding: 12px 4px 0;
+}
+
+.hourly-sales-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 48px;
+  height: 210px;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.hourly-sales-column strong {
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
+.hourly-sales-value {
+  min-height: 16px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.hourly-sales-track {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 135px;
+  border-radius: 6px 6px 0 0;
+  background: var(--bg3);
+  overflow: hidden;
+}
+
+.hourly-sales-bar {
+  width: 100%;
+  min-height: 0;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--teal-light), var(--teal));
+  transition: height 0.25s ease;
+}
+
 .sales-history-content {
   display: flex;
   flex-direction: column;
