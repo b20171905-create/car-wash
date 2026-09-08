@@ -114,8 +114,6 @@ export default function Dashboard({ user }) {
     { id: 'cash', label: 'Cash', color: '#0f766e' },
     { id: 'card', label: 'Card', color: '#2563eb' },
     { id: 'upi', label: 'Bank Transfer', color: '#d97706' },
-    { id: 'wallet', label: 'Wallet', color: '#7c3aed' },
-    { id: 'other', label: 'Other', color: '#64748b' },
   ];
   const todayKey = formatPkDateKey(new Date());
   const dailyPaymentSales = paymentOptions.map((payment) => {
