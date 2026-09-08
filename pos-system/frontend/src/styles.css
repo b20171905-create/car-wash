@@ -333,12 +333,15 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   background: rgba(17, 27, 34, 0.9);
   cursor: pointer;
   color: var(--text);
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
 .account-menu-trigger:hover,
 .account-menu-trigger[aria-expanded="true"] {
   border-color: var(--border-active);
   background: rgba(19, 38, 45, 0.96);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+  transform: translateY(-1px);
 }
 
 .account-menu-chevron {
@@ -372,8 +375,6 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 .account-menu-item:hover {
   background: var(--surface-hover);
-  color: var(--teal-light);
-  transform: translateX(2px);
 }
 
 .top-bar-account .user-chip {
