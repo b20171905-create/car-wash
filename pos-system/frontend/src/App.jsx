@@ -147,7 +147,11 @@ export default function App() {
             </div>
           </div>
           <div className="top-bar-account">
-            <div className="account-menu">
+            <div
+              className="account-menu"
+              onMouseEnter={() => setAccountMenuOpen(true)}
+              onMouseLeave={() => setAccountMenuOpen(false)}
+            >
               <button
                 id="owner-menu-btn"
                 className="user-chip account-menu-trigger"
