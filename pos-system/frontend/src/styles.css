@@ -1446,9 +1446,8 @@ input:focus {
 
 .action-menu-dropdown {
   position: absolute;
-  top: 50%;
-  right: calc(100% + 8px);
-  transform: translateY(-50%);
+  top: calc(100% + 10px);
+  right: 0;
   z-index: 60;
   min-width: 140px;
   padding: 4px;
@@ -1460,14 +1459,14 @@ input:focus {
 }
 
 .action-menu-dropdown.open-up {
-  top: 50%;
-  bottom: auto;
+  top: auto;
+  bottom: calc(100% + 10px);
 }
 
 /* Keep menus inside the viewport area of a table: lower rows open upward. */
 tr:nth-last-child(-n + 2) .action-menu-dropdown {
-  top: 50%;
-  bottom: auto;
+  top: auto;
+  bottom: calc(100% + 10px);
 }
 
 .sales-history-table,
