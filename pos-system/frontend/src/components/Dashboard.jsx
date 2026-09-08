@@ -127,7 +127,7 @@ export default function Dashboard({ user }) {
     };
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
-  const hourlySales = Array.from({ length: 13 }, (_, hour) => {
+  const hourlySales = Array.from({ length: 24 }, (_, hour) => {
     const salesAtHour = recentSales.filter((sale) => {
       const saleDate = parseTimestamp(sale.created_at);
       const hourText = new Intl.DateTimeFormat('en-GB', { timeZone: PK_TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(saleDate);
@@ -141,6 +141,17 @@ export default function Dashboard({ user }) {
     };
   });
   const hourlyMax = Math.max(...hourlySales.map((item) => item.revenue), 0);
+  const hourlyChartWidth = 960;
+  const hourlyChartHeight = 250;
+  const hourlyChartPadding = { top: 22, right: 18, bottom: 42, left: 18 };
+  const hourlyPlotWidth = hourlyChartWidth - hourlyChartPadding.left - hourlyChartPadding.right;
+  const hourlyPlotHeight = hourlyChartHeight - hourlyChartPadding.top - hourlyChartPadding.bottom;
+  const hourlyPoints = hourlySales.map((item, index) => ({
+    ...item,
+    x: hourlyChartPadding.left + (index * hourlyPlotWidth) / (hourlySales.length - 1),
+    y: hourlyChartPadding.top + hourlyPlotHeight - (hourlyMax ? (item.revenue / hourlyMax) * hourlyPlotHeight : 0),
+  }));
+  const hourlyLinePoints = hourlyPoints.map((point) => `${point.x},${point.y}`).join(' ');
   const weeklyMax = Math.max(...weeklySales.map((day) => day.revenue), 0);
   const monthOptions = Array.from({ length: 12 }, (_, index) => {
     const date = new Date();
@@ -240,19 +251,24 @@ export default function Dashboard({ user }) {
         <div className="hourly-analysis-section">
           <div style={{ marginBottom: 14 }}>
             <h3>Hourly Sales Analysis</h3>
-            <p>Today&apos;s revenue from 00:00 to 12:00</p>
+            <p>Today&apos;s revenue across all 24 hours</p>
           </div>
-          <div className="hourly-sales-chart" aria-label="Hourly sales analysis from midnight to noon">
-            {hourlySales.map((item) => (
-              <div className="hourly-sales-column" key={item.hour} title={`${item.label}: ${PKR(item.revenue)}, ${item.count} sales`}>
-                <div className="hourly-sales-value">{item.revenue ? PKR(item.revenue) : 'Rs. 0'}</div>
-                <div className="hourly-sales-track">
-                  <div className="hourly-sales-bar" style={{ height: hourlyMax ? `${Math.max((item.revenue / hourlyMax) * 100, item.revenue ? 4 : 0)}%` : 0 }} />
-                </div>
-                <strong>{item.label}</strong>
-                <span>{item.count} sales</span>
-              </div>
-            ))}
+          <div className="hourly-line-chart-wrap">
+            <svg className="hourly-line-chart" viewBox={`0 0 ${hourlyChartWidth} ${hourlyChartHeight}`} role="img" aria-label="Hourly sales analysis for all 24 hours">
+              {[0, 0.5, 1].map((ratio) => {
+                const y = hourlyChartPadding.top + hourlyPlotHeight * ratio;
+                return <line key={ratio} x1={hourlyChartPadding.left} x2={hourlyChartWidth - hourlyChartPadding.right} y1={y} y2={y} className="monthly-chart-grid" />;
+              })}
+              <polyline points={hourlyLinePoints} className="hourly-chart-line" />
+              {hourlyPoints.map((point) => (
+                <g key={point.hour}>
+                  <circle cx={point.x} cy={point.y} r="4" className="hourly-chart-point">
+                    <title>{`${point.label}: ${PKR(point.revenue)} (${point.count} sales)`}</title>
+                  </circle>
+                  <text x={point.x} y={hourlyChartHeight - 16} textAnchor="middle" className="hourly-chart-label">{point.label}</text>
+                </g>
+              ))}
+            </svg>
           </div>
         </div>
         <div className="daily-pie-charts">
