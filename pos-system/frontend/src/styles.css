@@ -1446,7 +1446,7 @@ input:focus {
 
 .action-menu-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 2px);
   right: 0;
   z-index: 60;
   min-width: 140px;
@@ -1460,13 +1460,13 @@ input:focus {
 
 .action-menu-dropdown.open-up {
   top: auto;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 2px);
 }
 
 /* Keep menus inside the viewport area of a table: lower rows open upward. */
 tr:nth-last-child(-n + 2) .action-menu-dropdown {
   top: auto;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 2px);
 }
 
 .sales-history-table,
