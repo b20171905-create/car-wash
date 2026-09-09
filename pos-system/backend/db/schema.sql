@@ -70,9 +70,21 @@ CREATE TABLE IF NOT EXISTS sale_items (
   line_total DOUBLE PRECISION NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS expenses (
+  id TEXT PRIMARY KEY,
+  branch_id TEXT NOT NULL REFERENCES branches(id),
+  user_id TEXT NOT NULL REFERENCES users(id),
+  expense_date DATE NOT NULL,
+  category TEXT NOT NULL,
+  amount DOUBLE PRECISION NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE SEQUENCE IF NOT EXISTS receipt_number_seq;
 
 CREATE INDEX IF NOT EXISTS idx_sales_branch ON sales(branch_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date_branch ON expenses(expense_date, branch_id);
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);

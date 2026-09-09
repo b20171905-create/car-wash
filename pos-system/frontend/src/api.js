@@ -129,6 +129,15 @@ export const api = {
 
   getMonthDailySummary: (month) => request(`/sales/month-daily-summary?month=${encodeURIComponent(month)}`),
 
+  getExpenses: (params = {}) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
+    return request(`/expenses${query ? `?${query}` : ''}`);
+  },
+
+  createExpense: (data) => request('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+
+  deleteExpense: (id) => request(`/expenses/${id}`, { method: 'DELETE' }),
+
   downloadExcelExport: (params = {}) => {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
     return download(`/exports/excel${query ? `?${query}` : ''}`);

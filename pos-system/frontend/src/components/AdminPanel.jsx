@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
+import SlipSettings from './SlipSettings.jsx';
 
 const PK_TIMEZONE = 'Asia/Karachi';
 const parseTimestamp = (value) => {
@@ -724,6 +725,7 @@ export default function AdminPanel() {
         <button id="tab-services" className={`tab${activeTab === 'services' ? ' active' : ''}`} onClick={() => changeTab('services')}>🔧 Services</button>
         <button id="tab-users"    className={`tab${activeTab === 'users'    ? ' active' : ''}`} onClick={() => changeTab('users')}>👥 Users</button>
         <button id="tab-export"   className={`tab${activeTab === 'export'   ? ' active' : ''}`} onClick={() => changeTab('export')}>📥 Export Data</button>
+        <button id="tab-slip-settings" className={`tab${activeTab === 'slip-settings' ? ' active' : ''}`} onClick={() => changeTab('slip-settings')}>🧾 Slip Settings</button>
       </div>
 
       {tabLoading ? (
@@ -737,6 +739,7 @@ export default function AdminPanel() {
           {activeTab === 'services' && <ServicesTab />}
           {activeTab === 'users' && <UsersTab />}
           {activeTab === 'export' && <ExportTab />}
+          {activeTab === 'slip-settings' && <SlipSettings />}
         </>
       )}
     </div>

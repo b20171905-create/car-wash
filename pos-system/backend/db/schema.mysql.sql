@@ -74,7 +74,21 @@ CREATE TABLE IF NOT EXISTS sale_items (
   FOREIGN KEY (service_id) REFERENCES services(id)
 );
 
+CREATE TABLE IF NOT EXISTS expenses (
+  id VARCHAR(255) PRIMARY KEY,
+  branch_id VARCHAR(255) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  expense_date DATE NOT NULL,
+  category VARCHAR(120) NOT NULL,
+  amount DOUBLE NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (branch_id) REFERENCES branches(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_sales_branch ON sales(branch_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale ON sale_items(sale_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date_branch ON expenses(expense_date, branch_id);
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
