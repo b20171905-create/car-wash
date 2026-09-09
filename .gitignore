@@ -4,4 +4,15 @@
 **/*.sqlite
 **/*.sqlite-*
 **/.env
+**/.env.*
+!**/.env.example
 **/*.log
+
+# Local release bundles and build exports
+**/*.zip
+**/*.exe
+**/*.blockmap
+
+# Local inspection material
+/installs/
+/Screenshot*.png
