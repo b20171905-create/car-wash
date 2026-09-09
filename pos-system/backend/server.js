@@ -12,6 +12,7 @@ const usersRoutes = require('./routes/users');
 const analyticsRoutes = require('./routes/analytics');
 const exportRoutes = require('./routes/exports');
 const receiptSettingsRoutes = require('./routes/receiptSettings');
+const expensesRoutes = require('./routes/expenses');
 const db = require('./db');
 const { ensureOwnerCreated } = require('./db/seed');
 
@@ -61,6 +62,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/exports', exportRoutes);
 app.use('/api/receipt-settings', receiptSettingsRoutes);
+app.use('/api/expenses', expensesRoutes);
 
 // Trigger seed automatically on server load once database schema is ready
 // Non-blocking: errors are logged but don't prevent server startup
