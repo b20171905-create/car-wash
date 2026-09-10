@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { key: 'checkout', icon: '🛒', label: 'Checkout', roles: ['branch_manager', 'cashier'] },
   { key: 'dashboard', icon: '📊', label: 'Sales Analysis', roles: ['owner', 'branch_manager'] },
   { key: 'history', icon: '📋', label: 'Sales History', roles: ['owner', 'branch_manager'] },
-  { key: 'expenses', icon: '💸', label: 'Daily Expenses', roles: ['owner', 'branch_manager'] },
+  { key: 'expenses', icon: '💸', label: 'Daily Expenses', roles: ['owner', 'branch_manager', 'cashier'] },
 ];
 
 const PAGE_META = {
@@ -205,7 +205,7 @@ export default function App() {
               {view === 'checkout' && <Checkout user={user} />}
               {view === 'dashboard' && <Dashboard user={user} />}
               {view === 'history' && <SalesHistory user={user} />}
-              {view === 'expenses' && (user.role === 'owner' || user.role === 'branch_manager') && <DailyExpenses user={user} />}
+              {view === 'expenses' && <DailyExpenses user={user} />}
               {view === 'admin' && user.role === 'owner' && <AdminPanel />}
             </>
           )}

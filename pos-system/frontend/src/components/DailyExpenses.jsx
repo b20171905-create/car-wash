@@ -12,8 +12,10 @@ export default function DailyExpenses({ user }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const canViewExpenses = user.role === 'owner' || user.role === 'branch_manager';
 
   async function loadExpenses() {
+    if (!canViewExpenses) return;
     setLoading(true);
     try {
       const [items, availableBranches] = await Promise.all([
@@ -32,7 +34,7 @@ export default function DailyExpenses({ user }) {
     }
   }
 
-  useEffect(() => { loadExpenses(); }, [date]);
+  useEffect(() => { loadExpenses(); }, [date, canViewExpenses]);
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -47,7 +49,7 @@ export default function DailyExpenses({ user }) {
       await api.createExpense({ ...form, expense_date: date });
       setForm((current) => ({ ...current, category: '', amount: '', notes: '' }));
       setMessage({ type: 'success', text: 'Expense recorded.' });
-      await loadExpenses();
+      if (canViewExpenses) await loadExpenses();
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
     } finally {
@@ -73,7 +75,7 @@ export default function DailyExpenses({ user }) {
       <div className="card" style={{ maxWidth: 980 }}>
         <div className="section-actions">
           <div><div className="section-title">Record expense</div><p style={{ margin: 0 }}>Add operating costs for the selected day.</p></div>
-          <div>Total: <strong>{formatMoney(total)}</strong></div>
+          {canViewExpenses && <div>Total: <strong>{formatMoney(total)}</strong></div>}
         </div>
         <form onSubmit={save}>
           <div className="form-row">
@@ -88,10 +90,10 @@ export default function DailyExpenses({ user }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}><button className="btn btn-primary" type="submit" disabled={saving}>{saving ? <span className="spinner" /> : 'Add Expense'}</button></div>
         </form>
       </div>
-      <div className="card" style={{ maxWidth: 980, marginTop: 16 }}>
+      {canViewExpenses && <div className="card" style={{ maxWidth: 980, marginTop: 16 }}>
         <div className="section-title" style={{ marginBottom: 12 }}>Expenses for {date}</div>
         {loading ? <div className="page-loading"><div className="spinner" style={{ width: 32, height: 32 }} /></div> : expenses.length === 0 ? <p>No expenses recorded for this date.</p> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Category</th><th>Branch</th><th>Notes</th><th>Amount</th><th /></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.category}</td><td>{expense.branch_name}</td><td>{expense.notes || '—'}</td><td>{formatMoney(expense.amount)}</td><td><button className="btn btn-danger btn-sm" type="button" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}</tbody></table></div>}
-      </div>
+      </div>}
     </div>
   );
 }

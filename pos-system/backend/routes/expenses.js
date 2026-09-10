@@ -1,10 +1,10 @@
 const express = require('express');
 const { v4: uuid } = require('uuid');
 const db = require('../db');
-const { requireAuth, requireBranchManager } = require('../services/auth');
+const { requireAuth, requireBranchManager, requireCashierOrAbove } = require('../services/auth');
 
 const router = express.Router();
-router.use(requireAuth, requireBranchManager);
+router.use(requireAuth);
 
 async function ensureTable() {
   await db.prepare(`CREATE TABLE IF NOT EXISTS expenses (
@@ -25,7 +25,7 @@ function branchFilter(req, params) {
   return ' AND e.branch_id = ?';
 }
 
-router.get('/', async (req, res, next) => {
+router.get('/', requireBranchManager, async (req, res, next) => {
   try {
     await ensureTable();
     const expenseDate = req.query.date || new Date().toISOString().slice(0, 10);
@@ -39,7 +39,7 @@ router.get('/', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', requireCashierOrAbove, async (req, res, next) => {
   try {
     await ensureTable();
     const { expense_date, category, amount, notes, branch_id } = req.body;
@@ -56,7 +56,7 @@ router.post('/', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', requireBranchManager, async (req, res, next) => {
   try {
     await ensureTable();
     const params = [req.params.id];
