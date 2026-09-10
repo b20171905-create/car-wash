@@ -275,7 +275,7 @@ router.get('/summary', requireBranchManager, async (req, res, next) => {
     LEFT JOIN sales s ON s.branch_id = b.id AND s.status = 'paid'
     LEFT JOIN customers c ON c.id = s.customer_id
   `;
-  const params = Array.from({ length: 14 }, () => [start, end]).flat();
+  const params = Array.from({ length: 8 }, () => [start, end]).flat();
 
   if (branchId) { query += ' WHERE b.id = ?'; params.push(branchId); }
   query += ' GROUP BY b.id ORDER BY revenue DESC';
