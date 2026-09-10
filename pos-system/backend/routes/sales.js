@@ -267,7 +267,7 @@ router.get('/hourly-summary', requireBranchManager, async (req, res, next) => {
       FROM sales s
       WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at < ?
     `;
-    const params = [bounds.start, bounds.end];
+    const params = [bounds.start.toISOString(), bounds.end.toISOString()];
     if (branchId) { query += ' AND s.branch_id = ?'; params.push(branchId); }
     query += ' ORDER BY s.created_at ASC';
     res.json(await db.prepare(query).all(...params));

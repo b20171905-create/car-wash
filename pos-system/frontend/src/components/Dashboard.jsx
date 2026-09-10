@@ -41,41 +41,47 @@ export default function Dashboard({ user }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const start = new Date();
-    start.setDate(start.getDate() - 6);
-    const from = formatPkDateKey(start);
+    const loadDashboard = () => {
+      const start = new Date();
+      start.setDate(start.getDate() - 6);
+      const from = formatPkDateKey(start);
 
-    Promise.all([
-      api.getSummary().catch(() => []),
-      api.getSales({ from, limit: 500 }).catch(() => []),
-      api.getMonthlySummary().catch(() => []),
-    ]).then(([s, sales, monthly]) => {
-      setSummary(s);
-      setRecentSales(sales);
-      const days = Array.from({ length: 7 }, (_, index) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - index));
-        const key = formatPkDateKey(date);
-        return {
-          key,
-          label: date.toLocaleDateString('en-PK', { weekday: 'short', timeZone: PK_TIMEZONE }),
-          dateLabel: date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', timeZone: PK_TIMEZONE }),
-          revenue: 0,
-          count: 0,
-        };
+      Promise.all([
+        api.getSummary().catch(() => []),
+        api.getSales({ from, limit: 500 }).catch(() => []),
+        api.getMonthlySummary().catch(() => []),
+      ]).then(([s, sales, monthly]) => {
+        setSummary(s);
+        setRecentSales(sales);
+        const days = Array.from({ length: 7 }, (_, index) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - index));
+          const key = formatPkDateKey(date);
+          return {
+            key,
+            label: date.toLocaleDateString('en-PK', { weekday: 'short', timeZone: PK_TIMEZONE }),
+            dateLabel: date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', timeZone: PK_TIMEZONE }),
+            revenue: 0,
+            count: 0,
+          };
+        });
+        const byDay = Object.fromEntries(days.map((day) => [day.key, day]));
+        sales.forEach((sale) => {
+          const day = byDay[formatPkDateKey(parseTimestamp(sale.created_at))];
+          if (day) {
+            day.revenue += Number(sale.total || 0);
+            day.count += 1;
+          }
+        });
+        setWeeklySales(days);
+        setYearlySales(monthly);
+        setLoading(false);
       });
-      const byDay = Object.fromEntries(days.map((day) => [day.key, day]));
-      sales.forEach((sale) => {
-        const day = byDay[formatPkDateKey(parseTimestamp(sale.created_at))];
-        if (day) {
-          day.revenue += Number(sale.total || 0);
-          day.count += 1;
-        }
-      });
-      setWeeklySales(days);
-      setYearlySales(monthly);
-      setLoading(false);
-    });
+    };
+
+    loadDashboard();
+    const refreshTimer = window.setInterval(loadDashboard, 60_000);
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   useEffect(() => {
@@ -87,7 +93,10 @@ export default function Dashboard({ user }) {
   }, [selectedYear]);
 
   useEffect(() => {
-    api.getHourlySummary(selectedHourlyDate).then(setHourlySalesData).catch(() => setHourlySalesData([]));
+    const loadHourlySales = () => api.getHourlySummary(selectedHourlyDate).then(setHourlySalesData).catch(() => setHourlySalesData([]));
+    loadHourlySales();
+    const refreshTimer = window.setInterval(loadHourlySales, 60_000);
+    return () => window.clearInterval(refreshTimer);
   }, [selectedHourlyDate]);
 
   const totalRevenue = summary.reduce((s, b) => s + Number(b.revenue), 0);
