@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import SalesHistory from './components/SalesHistory.jsx';
 import DailyExpenses from './components/DailyExpenses.jsx';
+import ProfitLoss from './components/ProfitLoss.jsx';
 import './styles.css';
 
 const NAV_ITEMS = [
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { key: 'dashboard', icon: '📊', label: 'Sales Analysis', roles: ['owner', 'branch_manager'] },
   { key: 'history', icon: '📋', label: 'Sales History', roles: ['owner', 'branch_manager'] },
   { key: 'expenses', icon: '💸', label: 'Daily Expenses', roles: ['owner', 'branch_manager', 'cashier'] },
+  { key: 'profit-loss', icon: '📈', label: 'Profit & Loss', roles: ['owner', 'branch_manager'] },
 ];
 
 const PAGE_META = {
@@ -20,6 +22,7 @@ const PAGE_META = {
   dashboard: { title: 'Sales Analysis', subtitle: 'Revenue overview across all branches' },
   history: { title: 'Sales History', subtitle: 'Browse, filter and reprint past receipts' },
   expenses: { title: 'Daily Expenses', subtitle: 'Record and review operating expenses by day' },
+  'profit-loss': { title: 'Profit & Loss', subtitle: 'Compare paid revenue with operating expenses' },
   admin: { title: 'Administration', subtitle: 'Manage branches, services and staff accounts' },
 };
 
@@ -206,6 +209,7 @@ export default function App() {
               {view === 'dashboard' && <Dashboard user={user} />}
               {view === 'history' && <SalesHistory user={user} />}
               {view === 'expenses' && <DailyExpenses user={user} />}
+              {view === 'profit-loss' && (user.role === 'owner' || user.role === 'branch_manager') && <ProfitLoss user={user} />}
               {view === 'admin' && user.role === 'owner' && <AdminPanel />}
             </>
           )}

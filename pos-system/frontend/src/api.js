@@ -138,6 +138,11 @@ export const api = {
 
   deleteExpense: (id) => request(`/expenses/${id}`, { method: 'DELETE' }),
 
+  getProfitLoss: (params = {}) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
+    return request(`/reports/profit-loss${query ? `?${query}` : ''}`);
+  },
+
   downloadExcelExport: (params = {}) => {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
     return download(`/exports/excel${query ? `?${query}` : ''}`);
