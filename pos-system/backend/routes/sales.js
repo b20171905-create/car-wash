@@ -17,6 +17,18 @@ const router = express.Router();
 // All /api/sales routes require a valid JWT
 router.use(requireAuth);
 
+function getPakistanDayBounds(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Karachi',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const date = `${parts.find((part) => part.type === 'year').value}-${parts.find((part) => part.type === 'month').value}-${parts.find((part) => part.type === 'day').value}`;
+  const start = new Date(`${date}T00:00:00+05:00`);
+  return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+}
+
 async function nextReceiptNumber() {
   const dbType = (process.env.DB_CLIENT || '').toLowerCase();
   const isMysql = dbType === 'mysql' || (process.env.DATABASE_URL || '').startsWith('mysql');
@@ -239,31 +251,31 @@ router.get('/', requireBranchManager, async (req, res, next) => {
 router.get('/summary', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const today = new Date().toISOString().slice(0, 10);
+  const { start, end } = getPakistanDayBounds();
 
   let query = `
     SELECT b.id, b.name as branch_name,
            COUNT(s.id) as sale_count,
            COALESCE(SUM(s.total), 0) as revenue,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? THEN s.total ELSE 0 END), 0) as today_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? THEN 1 END) as today_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN s.total ELSE 0 END), 0) as today_bike_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'bike' THEN 1 END) as today_bike_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN s.total ELSE 0 END), 0) as today_car_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'car' THEN 1 END) as today_car_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN s.total ELSE 0 END), 0) as today_rikshaw_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'rikshaw' THEN 1 END) as today_rikshaw_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN s.total ELSE 0 END), 0) as today_suv_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'suv' THEN 1 END) as today_suv_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN s.total ELSE 0 END), 0) as today_coaster_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'coaster' THEN 1 END) as today_coaster_count,
-           COALESCE(SUM(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN s.total ELSE 0 END), 0) as today_truck_revenue,
-           COUNT(CASE WHEN date(s.created_at) = ? AND c.vehicle_type = 'truck' THEN 1 END) as today_truck_count
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? THEN s.total ELSE 0 END), 0) as today_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? THEN 1 END) as today_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'bike' THEN s.total ELSE 0 END), 0) as today_bike_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'bike' THEN 1 END) as today_bike_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'car' THEN s.total ELSE 0 END), 0) as today_car_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'car' THEN 1 END) as today_car_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'rikshaw' THEN s.total ELSE 0 END), 0) as today_rikshaw_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'rikshaw' THEN 1 END) as today_rikshaw_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'suv' THEN s.total ELSE 0 END), 0) as today_suv_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'suv' THEN 1 END) as today_suv_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'coaster' THEN s.total ELSE 0 END), 0) as today_coaster_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'coaster' THEN 1 END) as today_coaster_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'truck' THEN s.total ELSE 0 END), 0) as today_truck_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'truck' THEN 1 END) as today_truck_count
     FROM branches b
     LEFT JOIN sales s ON s.branch_id = b.id AND s.status = 'paid'
     LEFT JOIN customers c ON c.id = s.customer_id
   `;
-  const params = [today, today, today, today, today, today, today, today, today, today, today, today, today, today, today, today];
+  const params = Array.from({ length: 8 }, () => [start, end]).flat();
 
   if (branchId) { query += ' WHERE b.id = ?'; params.push(branchId); }
   query += ' GROUP BY b.id ORDER BY revenue DESC';
