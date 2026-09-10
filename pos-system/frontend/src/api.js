@@ -123,6 +123,8 @@ export const api = {
 
   getSummary: () => request('/sales/summary'),
 
+  getHourlySummary: (date) => request(`/sales/hourly-summary?date=${encodeURIComponent(date)}`),
+
   getMonthlySummary: (year) => request(`/sales/monthly-summary${year ? `?year=${encodeURIComponent(year)}` : ''}`),
 
   getYearlySummary: (year) => request(`/sales/monthly-summary?year=${encodeURIComponent(year)}`),

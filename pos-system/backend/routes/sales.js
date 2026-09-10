@@ -31,6 +31,11 @@ function getPakistanDayBounds(now = new Date()) {
   return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
 }
 
+function getPakistanDayBoundsForDate(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null;
+  return getPakistanDayBounds(new Date(`${date}T12:00:00+05:00`));
+}
+
 async function nextReceiptNumber() {
   const dbType = (process.env.DB_CLIENT || '').toLowerCase();
   const isMysql = dbType === 'mysql' || (process.env.DATABASE_URL || '').startsWith('mysql');
@@ -244,6 +249,28 @@ router.get('/', requireBranchManager, async (req, res, next) => {
 
     const sales = await db.prepare(query).all(...params);
     res.json(sales);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/sales/hourly-summary?date=YYYY-MM-DD — selected Pakistan calendar day
+router.get('/hourly-summary', requireBranchManager, async (req, res, next) => {
+  try {
+    const date = req.query.date;
+    const bounds = getPakistanDayBoundsForDate(date);
+    if (!bounds) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
+
+    const branchId = scopeBranchId(req);
+    let query = `
+      SELECT s.id, s.created_at, s.total, s.payment_method
+      FROM sales s
+      WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at < ?
+    `;
+    const params = [bounds.start, bounds.end];
+    if (branchId) { query += ' AND s.branch_id = ?'; params.push(branchId); }
+    query += ' ORDER BY s.created_at ASC';
+    res.json(await db.prepare(query).all(...params));
   } catch (error) {
     next(error);
   }

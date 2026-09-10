@@ -36,6 +36,8 @@ export default function Dashboard({ user }) {
   const [yearlySales, setYearlySales] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(formatPkMonthKey(new Date()));
   const [selectedMonthSales, setSelectedMonthSales] = useState([]);
+  const [selectedHourlyDate, setSelectedHourlyDate] = useState(formatPkDateKey(new Date()));
+  const [hourlySalesData, setHourlySalesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -84,6 +86,10 @@ export default function Dashboard({ user }) {
     api.getYearlySummary(selectedYear).then(setYearlySales).catch(() => setYearlySales([]));
   }, [selectedYear]);
 
+  useEffect(() => {
+    api.getHourlySummary(selectedHourlyDate).then(setHourlySalesData).catch(() => setHourlySalesData([]));
+  }, [selectedHourlyDate]);
+
   const totalRevenue = summary.reduce((s, b) => s + Number(b.revenue), 0);
   const totalToday = summary.reduce((s, b) => s + Number(b.today_revenue), 0);
   const totalSales = summary.reduce((s, b) => s + Number(b.sale_count), 0);
@@ -128,10 +134,10 @@ export default function Dashboard({ user }) {
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
   const hourlySales = Array.from({ length: 24 }, (_, hour) => {
-    const salesAtHour = recentSales.filter((sale) => {
+    const salesAtHour = hourlySalesData.filter((sale) => {
       const saleDate = parseTimestamp(sale.created_at);
       const hourText = new Intl.DateTimeFormat('en-GB', { timeZone: PK_TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(saleDate);
-      return formatPkDateKey(saleDate) === todayKey && Number(hourText) === hour;
+      return formatPkDateKey(saleDate) === selectedHourlyDate && Number(hourText) === hour;
     });
     return {
       hour,
@@ -251,7 +257,11 @@ export default function Dashboard({ user }) {
         <div className="hourly-analysis-section">
           <div style={{ marginBottom: 14 }}>
             <h3>Hourly Sales Analysis</h3>
-            <p>Today&apos;s revenue across all 24 hours</p>
+            <p>Revenue across all 24 hours for the selected date</p>
+            <div className="form-group" style={{ maxWidth: 220 }}>
+              <label className="form-label" htmlFor="hourly-sales-date">Calendar date</label>
+              <input id="hourly-sales-date" className="form-input" type="date" value={selectedHourlyDate} onChange={(event) => setSelectedHourlyDate(event.target.value)} />
+            </div>
           </div>
           <div className="hourly-line-chart-wrap">
             <svg className="hourly-line-chart" viewBox={`0 0 ${hourlyChartWidth} ${hourlyChartHeight}`} role="img" aria-label="Hourly sales analysis for all 24 hours">
