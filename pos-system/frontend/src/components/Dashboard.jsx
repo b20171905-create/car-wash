@@ -143,16 +143,12 @@ export default function Dashboard({ user }) {
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
   const hourlySales = Array.from({ length: 24 }, (_, hour) => {
-    const salesAtHour = hourlySalesData.filter((sale) => {
-      const saleDate = parseTimestamp(sale.created_at);
-      const hourText = new Intl.DateTimeFormat('en-GB', { timeZone: PK_TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(saleDate);
-      return formatPkDateKey(saleDate) === selectedHourlyDate && Number(hourText) === hour;
-    });
+    const hourlySummary = hourlySalesData.find((item) => Number(item.hour) === hour);
     return {
       hour,
       label: `${String(hour).padStart(2, '0')}:00`,
-      revenue: salesAtHour.reduce((total, sale) => total + Number(sale.total || 0), 0),
-      count: salesAtHour.length,
+      revenue: Number(hourlySummary?.revenue || 0),
+      count: Number(hourlySummary?.sale_count || 0),
     };
   });
   const hourlyMax = Math.max(...hourlySales.map((item) => item.revenue), 0);

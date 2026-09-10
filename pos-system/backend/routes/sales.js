@@ -262,14 +262,19 @@ router.get('/hourly-summary', requireBranchManager, async (req, res, next) => {
     if (!bounds) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
 
     const branchId = scopeBranchId(req);
+    const dbType = (process.env.DB_CLIENT || '').toLowerCase();
+    const isMysql = dbType === 'mysql' || (process.env.DATABASE_URL || '').startsWith('mysql');
+    const hourExpression = isMysql
+      ? 'HOUR(DATE_ADD(s.created_at, INTERVAL 5 HOUR))'
+      : "EXTRACT(HOUR FROM (s.created_at AT TIME ZONE 'Asia/Karachi'))";
     let query = `
-      SELECT s.id, s.created_at, s.total, s.payment_method
+      SELECT ${hourExpression} AS hour, COALESCE(SUM(s.total), 0) AS revenue, COUNT(s.id) AS sale_count
       FROM sales s
       WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at < ?
     `;
     const params = [bounds.start.toISOString(), bounds.end.toISOString()];
     if (branchId) { query += ' AND s.branch_id = ?'; params.push(branchId); }
-    query += ' ORDER BY s.created_at ASC';
+    query += ` GROUP BY ${hourExpression} ORDER BY hour`;
     res.json(await db.prepare(query).all(...params));
   } catch (error) {
     next(error);
