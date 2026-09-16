@@ -784,7 +784,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 /* ── Profit & Loss ──────────────────────────────────── */
 .profit-loss-page {
   width: 100%;
-  max-width: 1180px;
+  max-width: none;
   padding: clamp(16px, 2.5vw, 30px);
   border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 16px;
@@ -879,12 +879,14 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 .profit-loss-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 34px;
 }
 
 .profit-loss-chart-panel,
 .profit-loss-expense-panel { min-width: 0; }
+.profit-loss-chart-panel { width: 100%; }
+.profit-loss-expense-panel { width: 100%; }
 .profit-loss-chart-panel h2,
 .profit-loss-expense-panel h2 { color: #eeeeee; font-size: 1.1rem; margin-bottom: 16px; }
 .profit-loss-chart-wrap { border-top: 1px solid transparent; }
@@ -920,7 +922,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 @media (max-width: 800px) {
   .profit-loss-heading { align-items: start; flex-direction: column; }
   .profit-loss-filters { justify-content: start; }
-  .profit-loss-grid { grid-template-columns: 1fr; gap: 24px; }
+  .profit-loss-grid { gap: 24px; }
 }
 
 @media (max-width: 600px) {
