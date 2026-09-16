@@ -166,7 +166,7 @@ router.post('/', requireCashierOrAbove, async (req, res, next) => {
     sale: receiptSale,
     items: resolvedItems,
     branch,
-    receipt_print_payload: printService.buildReceipt({ branch, sale: receiptSale, items: resolvedItems, settings }),
+    receipt_print_payload: printService.buildReceiptCopies({ branch, sale: receiptSale, items: resolvedItems, settings }),
   });
 
   sendPostSaleNotifications(sale, branch, resolvedItems, customer).catch((err) =>
@@ -416,7 +416,7 @@ router.get('/:id', requireBranchManager, async (req, res, next) => {
     sale,
     items,
     branch,
-    receipt_print_payload: printService.buildReceipt({ branch, sale, items, settings }),
+    receipt_print_payload: printService.buildReceiptCopies({ branch, sale, items, settings }),
   });
   } catch (error) {
     next(error);
@@ -466,19 +466,12 @@ router.put('/:id/slip', requireOwner, async (req, res, next) => {
       WHERE s.id = ?
     `).get(sale.id);
 
-    const receiptSale = {
-      ...sale,
-      customer_name: customer.name.trim(),
-      vehicle_number: customer.vehicle_number.trim(),
-      vehicle_model: customer.vehicle_model || '',
-    };
     const items = await db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(sale.id);
     const branch = { name: updatedSale.branch_name, address: updatedSale.branch_address, phone: updatedSale.branch_phone };
     res.json({
       sale: updatedSale,
       items,
-      receipt_print_payload: printService.buildReceipt({ branch, sale: receiptSale, items: resolvedItems, settings }),
-      receipt_print_payload: printService.buildReceipt({ branch, sale: updatedSale, items, settings: await receiptSettings.get() }),
+      receipt_print_payload: printService.buildReceiptCopies({ branch, sale: updatedSale, items, settings: await receiptSettings.get() }),
     });
   } catch (error) {
     next(error);

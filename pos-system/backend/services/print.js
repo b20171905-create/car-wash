@@ -37,7 +37,7 @@ function parseTimestamp(value) {
   return new Date(value);
 }
 
-function buildReceipt({ branch, sale, items, settings = {} }) {
+function buildReceipt({ branch, sale, items, settings = {}, copyLabel = '' }) {
   const layout = { ...DEFAULT_LAYOUT, ...settings };
   const leftPadding = ' '.repeat(Number(layout.left_padding));
   const rightPadding = ' '.repeat(Number(layout.right_padding));
@@ -54,6 +54,11 @@ function buildReceipt({ branch, sale, items, settings = {} }) {
   r += commands.doubleHeightOn + commands.boldOn;
   r += line(branch.name);
   r += commands.doubleHeightOff + commands.boldOff;
+  if (copyLabel) {
+    r += commands.boldOn;
+    r += line(copyLabel);
+    r += commands.boldOff;
+  }
   if (branch.address) r += line(branch.address);
   if (branch.phone) r += line(branch.phone);
   r += commands.feed(1);
@@ -91,4 +96,23 @@ function buildReceipt({ branch, sale, items, settings = {} }) {
   return Buffer.from(r, 'binary').toString('base64');
 }
 
-module.exports = { buildReceipt };
+function buildReceiptCopies({ branch, sale, items, settings = {} }) {
+  const customerCopy = Buffer.from(buildReceipt({
+    branch,
+    sale,
+    items,
+    settings,
+    copyLabel: 'CUSTOMER COPY',
+  }), 'base64');
+  const stationCopy = Buffer.from(buildReceipt({
+    branch,
+    sale,
+    items,
+    settings,
+    copyLabel: 'STATION COPY',
+  }), 'base64');
+
+  return Buffer.concat([customerCopy, stationCopy]).toString('base64');
+}
+
+module.exports = { buildReceipt, buildReceiptCopies };
