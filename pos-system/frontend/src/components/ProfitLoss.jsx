@@ -5,6 +5,11 @@ const today = () => new Date().toISOString().slice(0, 10);
 const firstOfMonth = () => `${today().slice(0, 8)}01`;
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 const formatCompactMoney = (value) => `Rs. ${Number(value || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
+const formatChartDate = (value) => {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return '—';
+  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12)).toLocaleDateString('en-PK', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
 
 function buildChart(data) {
   const width = 640;
@@ -19,8 +24,6 @@ function buildChart(data) {
 }
 
 export default function ProfitLoss({ user }) {
-  const [from, setFrom] = useState(firstOfMonth());
-  const [to, setTo] = useState(today());
   const [branchId, setBranchId] = useState('');
   const [branches, setBranches] = useState([]);
   const [report, setReport] = useState(null);
@@ -32,7 +35,7 @@ export default function ProfitLoss({ user }) {
     setLoading(true);
     setMessage(null);
     try {
-      const data = await api.getProfitLoss({ from, to, branch_id: branchId });
+      const data = await api.getProfitLoss({ from: firstOfMonth(), to: today(), branch_id: branchId });
       setReport(data);
     } catch (error) {
       setReport(null);
@@ -48,7 +51,7 @@ export default function ProfitLoss({ user }) {
     }
   }, [user.role]);
 
-  useEffect(() => { loadReport(); }, [from, to, branchId]);
+  useEffect(() => { loadReport(); }, [branchId]);
 
   const profit = Number(report?.profit || 0);
   const revenue = Number(report?.revenue || 0);
@@ -67,9 +70,6 @@ export default function ProfitLoss({ user }) {
           <h1>Profit &amp; loss</h1>
         </div>
         <div className="profit-loss-filters">
-          <label className="profit-loss-date"><span className="sr-only">From date</span><input id="profit-loss-from" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-          <span className="profit-loss-to">to</span>
-          <label className="profit-loss-date"><span className="sr-only">To date</span><input id="profit-loss-to" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
           {user.role === 'owner' && <select id="profit-loss-branch" className="profit-loss-branch" value={branchId} onChange={(event) => setBranchId(event.target.value)}><option value="">All branches</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>}
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function ProfitLoss({ user }) {
                 <polygon points={`${chart.revenuePoints} ${chart.width - chart.padding.right},${chart.height - chart.padding.bottom} ${chart.padding.left},${chart.height - chart.padding.bottom}`} className="profit-loss-area" />
                 <polyline points={chart.revenuePoints} className="profit-loss-line profit-loss-line-revenue" />
                 <polyline points={chart.expensePoints} className="profit-loss-line profit-loss-line-expenses" />
-                {daily.map((item, index) => <text key={item.day} x={chart.x(index)} y={chart.height - 8} textAnchor="middle" className="profit-loss-axis-label">{new Date(`${item.day}T12:00:00`).toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })}</text>)}
+                {daily.map((item, index) => <text key={item.day} x={chart.x(index)} y={chart.height - 8} textAnchor="middle" className="profit-loss-axis-label">{formatChartDate(item.day)}</text>)}
               </svg>
               <div className="profit-loss-legend"><span><i className="profit-loss-legend-revenue" />Revenue</span><span><i className="profit-loss-legend-expenses" />Expenses</span></div>
             </div>}

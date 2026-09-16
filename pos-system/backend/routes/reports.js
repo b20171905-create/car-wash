@@ -14,6 +14,17 @@ function validateDate(value, field) {
   return value;
 }
 
+function normalizeReportDay(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const text = String(value || '');
+  const isoMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) return isoMatch[1];
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+}
+
 router.get('/profit-loss', async (req, res, next) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -58,10 +69,13 @@ router.get('/profit-loss', async (req, res, next) => {
     const revenue = Number(sales?.revenue || 0);
     const expensesTotal = Number(expenses?.expenses || 0);
     const dailyByDate = new Map();
-    for (const item of dailySales) dailyByDate.set(String(item.day).slice(0, 10), { revenue: Number(item.revenue || 0), expenses: 0 });
+    for (const item of dailySales) {
+      const day = normalizeReportDay(item.day);
+      if (day) dailyByDate.set(day, { revenue: Number(item.revenue || 0), expenses: 0 });
+    }
     for (const item of dailyExpenses) {
-      const day = String(item.day).slice(0, 10);
-      dailyByDate.set(day, { ...(dailyByDate.get(day) || { revenue: 0 }), expenses: Number(item.expenses || 0) });
+      const day = normalizeReportDay(item.day);
+      if (day) dailyByDate.set(day, { ...(dailyByDate.get(day) || { revenue: 0 }), expenses: Number(item.expenses || 0) });
     }
     res.json({
       from,
