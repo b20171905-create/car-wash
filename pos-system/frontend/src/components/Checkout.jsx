@@ -389,7 +389,7 @@ export default function Checkout({ user }) {
         >
           {loading
             ? <><span className="spinner" /> Processing…</>
-            : `🖨️ Charge ${PKR(total)} & Print Receipt`}
+            : `Charge ${PKR(total)} & Continue`}
         </button>}
         </>}
       </div>

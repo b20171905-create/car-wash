@@ -197,7 +197,7 @@ export default function ReceiptModal({ saleData, onClose, autoAction = null }) {
             onClick={handlePrint}
             disabled={printState.loading}
           >
-            {printState.loading ? '⏳ Printing...' : '🖨 Print Receipt'}
+            {printState.loading ? '⏳ Printing...' : '🖨 Print Bill'}
           </button>
         </div>
         {printState.error && <div className="status-msg error no-print">{printState.error}</div>}
