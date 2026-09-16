@@ -15,7 +15,17 @@ const formatChartDate = (value) => {
   if (!match) return '—';
   return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12)).toLocaleDateString('en-PK', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
-const formatWeek = (value) => formatChartDate(value);
+const getMonthWindow = (report, daily) => {
+  const start = new Date(`${report?.from || currentMonth() + '-01'}T12:00:00Z`);
+  const end = new Date(`${report?.to || currentMonth() + '-01'}T12:00:00Z`);
+  const valuesByDay = new Map(daily.map((item) => [item.day, item]));
+  const window = [];
+  for (let date = new Date(start); date <= end; date.setUTCDate(date.getUTCDate() + 1)) {
+    const day = date.toISOString().slice(0, 10);
+    window.push({ day, revenue: Number(valuesByDay.get(day)?.revenue || 0), expenses: Number(valuesByDay.get(day)?.expenses || 0) });
+  }
+  return window;
+};
 
 function buildChart(data) {
   const width = 640;
@@ -65,9 +75,10 @@ export default function ProfitLoss({ user }) {
   const expenses = Number(report?.expenses || 0);
   const margin = revenue ? (profit / revenue) * 100 : 0;
   const daily = report?.daily || [];
-  const weekly = report?.weekly || [];
+  const monthly = getMonthWindow(report, daily);
+  const weekly = monthly.slice(-7);
+  const chart = buildChart(monthly);
   const weeklyMax = Math.max(...weekly.flatMap((item) => [Number(item.revenue || 0), Number(item.expenses || 0)]), 1);
-  const chart = buildChart(daily);
   const filteredCategories = (report?.categories || []).filter((item) => item.category.toLowerCase().includes(categorySearch.trim().toLowerCase()));
 
   return (
@@ -93,22 +104,22 @@ export default function ProfitLoss({ user }) {
 
         <section className="profit-loss-weekly-panel">
           <div className="profit-loss-section-heading">
-            <div><h2>Weekly analysis</h2><p>Revenue and expenses compared by week</p></div>
+            <div><h2>7-day profit &amp; sales analysis</h2><p>Revenue and expenses compared day by day</p></div>
             <div className="profit-loss-legend"><span><i className="profit-loss-legend-revenue" />Revenue</span><span><i className="profit-loss-legend-expenses" />Expenses</span></div>
           </div>
-          {weekly.length === 0 ? <p className="profit-loss-empty">No weekly activity recorded for this period.</p> : <div className="profit-loss-weekly-chart">{weekly.map((item) => <div className="profit-loss-week" key={item.week}><div className="profit-loss-week-bars"><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.revenue)}</span><div className="profit-loss-week-bar profit-loss-week-bar-revenue" style={{ height: `${Math.max((Number(item.revenue || 0) / weeklyMax) * 100, 2)}%` }} /></div><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.expenses)}</span><div className="profit-loss-week-bar profit-loss-week-bar-expenses" style={{ height: `${Math.max((Number(item.expenses || 0) / weeklyMax) * 100, 2)}%` }} /></div></div><strong>Week of {formatWeek(item.week)}</strong></div>)}</div>}
+          {weekly.length === 0 ? <p className="profit-loss-empty">No weekly activity recorded for this period.</p> : <div className="profit-loss-weekly-chart">{weekly.map((item) => <div className="profit-loss-week" key={item.day}><div className="profit-loss-week-bars"><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.revenue)}</span><div className="profit-loss-week-bar profit-loss-week-bar-revenue" style={{ height: `${Math.max((Number(item.revenue || 0) / weeklyMax) * 100, 2)}%` }} /></div><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.expenses)}</span><div className="profit-loss-week-bar profit-loss-week-bar-expenses" style={{ height: `${Math.max((Number(item.expenses || 0) / weeklyMax) * 100, 2)}%` }} /></div></div><strong>{formatChartDate(item.day)}</strong></div>)}</div>}
         </section>
 
         <div className="profit-loss-grid">
           <section className="profit-loss-chart-panel">
-            <h2>Revenue vs expenses</h2>
-            {daily.length === 0 ? <p className="profit-loss-empty">No daily activity recorded for this period.</p> : <div className="profit-loss-chart-wrap">
+            <h2>Monthly revenue &amp; expenses</h2>
+            {monthly.length === 0 ? <p className="profit-loss-empty">No monthly activity recorded for this period.</p> : <div className="profit-loss-chart-wrap">
               <svg className="profit-loss-chart" viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Revenue versus expenses over time">
                 {[0, 0.25, 0.5, 0.75, 1].map((level) => <g key={level}><line x1={chart.padding.left} x2={chart.width - chart.padding.right} y1={chart.y(chart.max * level)} y2={chart.y(chart.max * level)} className="profit-loss-grid-line" /><text x={chart.padding.left - 8} y={chart.y(chart.max * level) + 4} textAnchor="end" className="profit-loss-axis-label">{formatCompactMoney(chart.max * level)}</text></g>)}
                 <polygon points={`${chart.revenuePoints} ${chart.width - chart.padding.right},${chart.height - chart.padding.bottom} ${chart.padding.left},${chart.height - chart.padding.bottom}`} className="profit-loss-area" />
                 <polyline points={chart.revenuePoints} className="profit-loss-line profit-loss-line-revenue" />
                 <polyline points={chart.expensePoints} className="profit-loss-line profit-loss-line-expenses" />
-                {daily.map((item, index) => <text key={item.day} x={chart.x(index)} y={chart.height - 8} textAnchor="middle" className="profit-loss-axis-label">{formatChartDate(item.day)}</text>)}
+                {monthly.map((item, index) => (index === 0 || index === monthly.length - 1 || index % 5 === 0) && <text key={item.day} x={chart.x(index)} y={chart.height - 8} textAnchor="middle" className="profit-loss-axis-label">{formatChartDate(item.day)}</text>)}
               </svg>
               <div className="profit-loss-legend"><span><i className="profit-loss-legend-revenue" />Revenue</span><span><i className="profit-loss-legend-expenses" />Expenses</span></div>
             </div>}
