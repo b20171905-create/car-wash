@@ -25,6 +25,7 @@ export default function ProfitLoss({ user }) {
   const [branches, setBranches] = useState([]);
   const [report, setReport] = useState(null);
   const [categorySearch, setCategorySearch] = useState('');
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
 
@@ -57,7 +58,7 @@ export default function ProfitLoss({ user }) {
   const daily = report?.daily || [];
   const chart = buildChart(daily);
   const filteredCategories = (report?.categories || []).filter((item) => item.category.toLowerCase().includes(categorySearch.trim().toLowerCase()));
-  const visibleCategories = filteredCategories.slice(0, 4);
+  const visibleCategories = showAllCategories ? filteredCategories : filteredCategories.slice(0, 4);
   const remainingCategories = Math.max(filteredCategories.length - visibleCategories.length, 0);
 
   return (
@@ -99,7 +100,7 @@ export default function ProfitLoss({ user }) {
           </section>
           <section className="profit-loss-expense-panel">
             <div className="profit-loss-expense-heading"><h2>Expense breakdown</h2><input type="search" placeholder="Search category" aria-label="Search expense category" value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} /></div>
-            {visibleCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this period.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{visibleCategories.map((item) => <div className="profit-loss-expense-row" key={item.category}><span>{item.category}</span><span>{item.expense_count}</span><strong>{formatCompactMoney(item.amount)}</strong></div>)}{remainingCategories > 0 && <div className="profit-loss-more">··· {remainingCategories} more categor{remainingCategories === 1 ? 'y' : 'ies'}</div>}</div>}
+            {visibleCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this period.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{visibleCategories.map((item) => <div className="profit-loss-expense-row" key={item.category}><span>{item.category}</span><span>{item.expense_count}</span><strong>{formatCompactMoney(item.amount)}</strong></div>)}{(remainingCategories > 0 || showAllCategories) && <button type="button" className="profit-loss-more" onClick={() => setShowAllCategories((expanded) => !expanded)}>{showAllCategories ? '− Show fewer categories' : `··· ${remainingCategories} more categor${remainingCategories === 1 ? 'y' : 'ies'}`}</button>}</div>}
           </section>
         </div>
       </>}

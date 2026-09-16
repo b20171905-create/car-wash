@@ -905,7 +905,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 .profit-loss-expense-row strong { font-weight: 500; text-align: right; }
 .profit-loss-expense-header { text-transform: uppercase; font-size: 0.66rem; letter-spacing: 0.03em; }
 .profit-loss-expense-header span:nth-child(2), .profit-loss-expense-header span:nth-child(3) { text-align: right; }
-.profit-loss-more { padding: 10px 12px; border-top: 1px solid #383838; color: #aaa; font-size: 0.78rem; }
+.profit-loss-more { display: block; width: 100%; padding: 10px 12px; border: 0; border-top: 1px solid #383838; background: transparent; color: #aaa; cursor: pointer; font: inherit; font-size: 0.78rem; text-align: left; }
+.profit-loss-more:hover { background: #242424; color: #eee; }
 .profit-loss-empty { color: #888; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
