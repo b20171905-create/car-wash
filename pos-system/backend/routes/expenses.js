@@ -32,13 +32,15 @@ function branchFilter(req, params) {
 router.get('/', requireBranchManager, async (req, res, next) => {
   try {
     await ensureTable();
-    const expenseDate = req.query.date || pakistanDate();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
-    const params = [expenseDate];
+    const expenseDate = req.query.date || '';
+    if (expenseDate && !/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
+    const params = [];
     const filter = branchFilter(req, params);
+    const dateFilter = expenseDate ? ' WHERE e.expense_date = ?' : ' WHERE 1 = 1';
+    if (expenseDate) params.unshift(expenseDate);
     const rows = await db.prepare(`SELECT e.*, b.name AS branch_name, u.name AS created_by
       FROM expenses e JOIN branches b ON b.id = e.branch_id JOIN users u ON u.id = e.user_id
-      WHERE e.expense_date = ?${filter} ORDER BY e.created_at DESC`).all(...params);
+      ${dateFilter}${filter} ORDER BY e.created_at DESC`).all(...params);
     res.json(rows);
   } catch (error) { next(error); }
 });
