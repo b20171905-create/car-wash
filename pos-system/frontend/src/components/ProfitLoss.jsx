@@ -10,6 +10,7 @@ const monthDateRange = (month) => {
 };
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 const formatCompactMoney = (value) => `Rs. ${Number(value || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
+const formatDetailDate = (value) => formatChartDate(value);
 const formatChartDate = (value) => {
   const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return '—';
@@ -59,6 +60,7 @@ export default function ProfitLoss({ user }) {
   const [branches, setBranches] = useState([]);
   const [report, setReport] = useState(null);
   const [categorySearch, setCategorySearch] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
 
@@ -94,6 +96,10 @@ export default function ProfitLoss({ user }) {
   const chart = buildChart(monthly);
   const weeklyMax = Math.max(...weekly.flatMap((item) => [Number(item.revenue || 0), Number(item.expenses || 0)]), 1);
   const filteredCategories = (report?.categories || []).filter((item) => item.category.toLowerCase().includes(categorySearch.trim().toLowerCase()));
+
+  function toggleCategory(category) {
+    setExpandedCategories((current) => ({ ...current, [category]: !current[category] }));
+  }
 
   return (
     <div className="profit-loss-page">
@@ -139,7 +145,7 @@ export default function ProfitLoss({ user }) {
           </section>
           <section className="profit-loss-expense-panel">
             <div className="profit-loss-expense-heading"><h2>Expense breakdown</h2><input type="search" placeholder="Search category" aria-label="Search expense category" value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} /></div>
-            {filteredCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this period.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{filteredCategories.map((item) => <div className="profit-loss-expense-row" key={item.category}><span>{item.category}</span><span>{item.expense_count}</span><strong>{formatCompactMoney(item.amount)}</strong></div>)}</div>}
+            {filteredCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this period.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{filteredCategories.map((item) => <React.Fragment key={item.category}><button type="button" className="profit-loss-expense-row profit-loss-expense-category" onClick={() => toggleCategory(item.category)} aria-expanded={Boolean(expandedCategories[item.category])}><span><span className="profit-loss-expense-chevron">{expandedCategories[item.category] ? '⌄' : '›'}</span>{item.category}</span><span>{item.expense_count}</span><strong>{formatCompactMoney(item.amount)}</strong></button>{expandedCategories[item.category] && <div className="profit-loss-expense-details">{item.details.map((detail) => <div className="profit-loss-expense-detail" key={detail.id}><span>{formatDetailDate(detail.date)}{detail.time ? ` · ${detail.time}` : ''}</span><span>{detail.created_by || detail.notes || 'Expense'}</span><strong>{formatCompactMoney(detail.amount)}</strong></div>)}</div>}</React.Fragment>)}</div>}
           </section>
         </div>
       </>}

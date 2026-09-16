@@ -933,6 +933,15 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 .profit-loss-expense-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profit-loss-expense-row span:nth-child(2), .profit-loss-expense-header { color: #888; }
 .profit-loss-expense-row strong { font-weight: 500; text-align: right; }
+.profit-loss-expense-category { width: 100%; border-right: 0; border-bottom: 0; border-left: 0; background: transparent; color: var(--text); cursor: pointer; font: inherit; text-align: left; }
+.profit-loss-expense-category:hover { background: var(--surface-hover); }
+.profit-loss-expense-category > span:first-child { display: flex; align-items: center; gap: 6px; }
+.profit-loss-expense-chevron { color: var(--teal-light); font-size: 1rem; width: 10px; }
+.profit-loss-expense-details { background: rgba(7, 20, 26, 0.45); }
+.profit-loss-expense-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 0.7fr) 78px; gap: 10px; padding: 8px 12px 8px 30px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.72rem; }
+.profit-loss-expense-detail span:first-child { white-space: nowrap; }
+.profit-loss-expense-detail span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profit-loss-expense-detail strong { color: var(--text); font-weight: 500; text-align: right; }
 .profit-loss-expense-header { text-transform: uppercase; font-size: 0.66rem; letter-spacing: 0.03em; }
 .profit-loss-expense-header span:nth-child(2), .profit-loss-expense-header span:nth-child(3) { text-align: right; }
 .profit-loss-more { display: block; width: 100%; padding: 10px 12px; border: 0; border-top: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; font: inherit; font-size: 0.78rem; text-align: left; }

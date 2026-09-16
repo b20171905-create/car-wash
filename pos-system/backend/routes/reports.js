@@ -52,17 +52,17 @@ router.get('/profit-loss', async (req, res, next) => {
       expenseParams.push(requestedBranchId);
     }
 
-    const [sales, expenses, categories, dailySales, dailyExpenses] = await Promise.all([
+    const [sales, expenses, expenseRows, dailySales, dailyExpenses] = await Promise.all([
       db.prepare(`SELECT COALESCE(SUM(s.total), 0) AS revenue, COUNT(s.id) AS sale_count
         FROM sales s
         WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at <= ?${salesFilter}`).get(...salesParams),
       db.prepare(`SELECT COALESCE(SUM(e.amount), 0) AS expenses, COUNT(e.id) AS expense_count
         FROM expenses e
         WHERE e.expense_date >= ? AND e.expense_date <= ?${expenseFilter}`).get(...expenseParams),
-      db.prepare(`SELECT e.category, COALESCE(SUM(e.amount), 0) AS amount, COUNT(e.id) AS expense_count
-        FROM expenses e
+      db.prepare(`SELECT e.id, e.category, e.amount, e.expense_date, e.created_at, e.notes, u.name AS created_by
+        FROM expenses e LEFT JOIN users u ON u.id = e.user_id
         WHERE e.expense_date >= ? AND e.expense_date <= ?${expenseFilter}
-        GROUP BY e.category ORDER BY amount DESC`).all(...expenseParams),
+        ORDER BY e.expense_date DESC, e.created_at DESC`).all(...expenseParams),
       db.prepare(`SELECT DATE(s.created_at) AS day, COALESCE(SUM(s.total), 0) AS revenue
         FROM sales s
         WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at <= ?${salesFilter}
@@ -75,6 +75,24 @@ router.get('/profit-loss', async (req, res, next) => {
 
     const revenue = Number(sales?.revenue || 0);
     const expensesTotal = Number(expenses?.expenses || 0);
+    const categoryMap = new Map();
+    for (const row of expenseRows) {
+      const category = String(row.category || 'Uncategorized').trim() || 'Uncategorized';
+      const key = category.toLocaleLowerCase();
+      const group = categoryMap.get(key) || { category, amount: 0, expense_count: 0, details: [] };
+      group.amount += Number(row.amount || 0);
+      group.expense_count += 1;
+      group.details.push({
+        id: row.id,
+        date: normalizeReportDay(row.expense_date),
+        time: row.created_at ? new Date(row.created_at).toISOString().slice(11, 19) : '',
+        amount: Number(row.amount || 0),
+        notes: row.notes || '',
+        created_by: row.created_by || '',
+      });
+      categoryMap.set(key, group);
+    }
+    const categories = Array.from(categoryMap.values()).sort((first, second) => second.amount - first.amount);
     const dailyByDate = new Map();
     for (const item of dailySales) {
       const day = normalizeReportDay(item.day);
