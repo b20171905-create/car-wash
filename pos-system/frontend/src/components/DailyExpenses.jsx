@@ -91,7 +91,7 @@ export default function DailyExpenses({ user }) {
   return (
     <div>
       {message && <div className={`status-msg ${message.type}`} style={{ marginBottom: 16 }}>{message.text}</div>}
-      <div className="card" style={{ maxWidth: 980 }}>
+      <div className="card">
         <div className="section-actions">
           <div><div className="section-title">Record expense</div><p style={{ margin: 0 }}>Add operating costs for the selected day.</p></div>
           {canViewExpenses && <div>Total: <strong>{formatMoney(total)}</strong></div>}
@@ -109,12 +109,12 @@ export default function DailyExpenses({ user }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}><button className="btn btn-primary" type="submit" disabled={saving}>{saving ? <span className="spinner" /> : 'Add Expense'}</button></div>
         </form>
       </div>
-      {canViewExpenses && <div className="card" style={{ maxWidth: 980, marginTop: 16 }}>
+      {canViewExpenses && <div className="card" style={{ marginTop: 16 }}>
         <div className="section-title" style={{ marginBottom: 12 }}>Expenses for {date}</div>
         {loading ? <div className="page-loading"><div className="spinner" style={{ width: 32, height: 32 }} /></div> : expenses.length === 0 ? <p>No expenses recorded for this date.</p> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Category</th><th>Branch</th><th>Notes</th><th>Amount</th><th /></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.category}</td><td>{expense.branch_name}</td><td>{expense.notes || '—'}</td><td>{formatMoney(expense.amount)}</td><td><button className="btn btn-danger btn-sm" type="button" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}</tbody></table></div>}
       </div>}
-      {canViewExpenses && <div className="card profit-loss-expense-panel daily-expense-breakdown" style={{ maxWidth: 980, marginTop: 16 }}>
-        <div className="profit-loss-expense-heading"><div><div className="section-title">Expense breakdown</div><p style={{ margin: 0 }}>Merged categories for {date}.</p></div></div>
+      {canViewExpenses && <div className="card profit-loss-expense-panel daily-expense-breakdown" style={{ marginTop: 16 }}>
+        <div className="profit-loss-expense-heading"><div><div className="section-title">Expense breakdown</div><p style={{ margin: 0 }}>Merged categories for {date}.</p></div><label className="daily-expense-breakdown-date"><span className="sr-only">Breakdown date</span><input className="form-input" type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label></div>
         {expenseCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this date.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{expenseCategories.map((item) => <React.Fragment key={item.category}><button type="button" className="profit-loss-expense-row profit-loss-expense-category" onClick={() => setExpandedCategories((current) => ({ ...current, [item.category]: !current[item.category] }))} aria-expanded={Boolean(expandedCategories[item.category])}><span><span className="profit-loss-expense-chevron">{expandedCategories[item.category] ? '⌄' : '›'}</span>{item.category}</span><span>{item.count}</span><strong>{formatMoney(item.amount)}</strong></button>{expandedCategories[item.category] && <div className="profit-loss-expense-details">{item.details.map((detail) => <div className="profit-loss-expense-detail" key={detail.id}><span>{formatTime(detail.created_at) || 'Time unavailable'}</span><span>{detail.branch_name}{detail.notes ? ` · ${detail.notes}` : ''}</span><strong>{formatMoney(detail.amount)}</strong></div>)}</div>}</React.Fragment>)}</div>}
       </div>}
     </div>

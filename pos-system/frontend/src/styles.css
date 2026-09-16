@@ -927,6 +927,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 .profit-loss-expense-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
 .profit-loss-expense-heading h2 { max-width: 150px; }
 .profit-loss-expense-heading input { width: 130px; }
+.daily-expense-breakdown-date input { width: 150px; }
 .profit-loss-expense-table { border: 0; border-radius: 7px; overflow: hidden; background: var(--bg3); }
 .profit-loss-expense-row { display: grid; grid-template-columns: minmax(0, 1fr) 58px 78px; gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--border); font-size: 0.78rem; }
 .profit-loss-expense-row:first-child { border-top: 0; }
@@ -967,6 +968,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   .profit-loss-expense-heading { align-items: stretch; flex-direction: column; gap: 8px; }
   .profit-loss-expense-heading h2 { max-width: none; }
   .profit-loss-expense-heading input { width: 100%; }
+  .daily-expense-breakdown-date,
+  .daily-expense-breakdown-date input { width: 100%; }
   .profit-loss-chart-heading { align-items: stretch; flex-direction: column; gap: 8px; }
   .profit-loss-month,
   .profit-loss-month input { width: 100%; }
