@@ -21,6 +21,10 @@ const {
 
 const router = express.Router();
 
+function pakistanDate(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date);
+}
+
 // All analytics routes require authentication first
 router.use(requireAuth);
 
@@ -37,7 +41,7 @@ router.use(enforceBranchScope);
 router.get('/branch', async (req, res, next) => {
   try {
   const branchId = req.scopedBranchId; // set by enforceBranchScope
-  const today = new Date().toISOString().slice(0, 10);
+  const today = pakistanDate();
 
   let query = `
     SELECT
@@ -95,7 +99,7 @@ router.get('/monthly', async (req, res, next) => {
   const start = new Date();
   start.setDate(1);
   start.setMonth(start.getMonth() - 11);
-  const from = selectedYear ? `${selectedYear}-01-01` : start.toISOString().slice(0, 10);
+  const from = selectedYear ? `${selectedYear}-01-01` : pakistanDate(start);
 
   let dateFilter = 'date(s.created_at) >= date(?)';
   const params = [from];
@@ -135,7 +139,7 @@ router.get('/monthly', async (req, res, next) => {
 router.get('/daily', async (req, res, next) => {
   try {
   const branchId = req.scopedBranchId;
-  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const month = req.query.month || pakistanDate().slice(0, 7);
 
   if (!/^\d{4}-\d{2}$/.test(month)) {
     return res.status(400).json({ error: 'month must use YYYY-MM format' });

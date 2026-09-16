@@ -14,6 +14,10 @@ function validateDate(value, field) {
   return value;
 }
 
+function pakistanDate(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date);
+}
+
 function normalizeReportDay(value) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value.toISOString().slice(0, 10);
@@ -34,7 +38,7 @@ function getWeekStart(day) {
 
 router.get('/profit-loss', async (req, res, next) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = pakistanDate();
     const from = validateDate(req.query.from || today.slice(0, 8) + '01', 'from');
     const to = validateDate(req.query.to || today, 'to');
     if (from > to) return res.status(400).json({ error: 'from date cannot be after to date' });
@@ -85,7 +89,7 @@ router.get('/profit-loss', async (req, res, next) => {
       group.details.push({
         id: row.id,
         date: normalizeReportDay(row.expense_date),
-        time: row.created_at ? new Date(row.created_at).toISOString().slice(11, 19) : '',
+        created_at: row.created_at || '',
         amount: Number(row.amount || 0),
         notes: row.notes || '',
         created_by: row.created_by || '',

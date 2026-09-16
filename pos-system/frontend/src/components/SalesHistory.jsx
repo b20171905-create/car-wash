@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 import ReceiptModal from './ReceiptModal';
 
@@ -30,27 +30,6 @@ export default function SalesHistory({ user }) {
   const [receiptData, setReceiptData] = useState(null);
   const [receiptAction, setReceiptAction] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
-  const [actionMenuDirection, setActionMenuDirection] = useState('down');
-  const closeActionTimerRef = useRef(null);
-
-  const openActionMenu = (id, event) => {
-    if (closeActionTimerRef.current) {
-      clearTimeout(closeActionTimerRef.current);
-      closeActionTimerRef.current = null;
-    }
-    const triggerBounds = event.currentTarget.getBoundingClientRect();
-    setActionMenuDirection(triggerBounds.bottom + 180 > window.innerHeight ? 'up' : 'down');
-    setOpenActionId(id);
-  };
-
-  const closeActionMenu = (id) => {
-    if (closeActionTimerRef.current) {
-      clearTimeout(closeActionTimerRef.current);
-    }
-    closeActionTimerRef.current = setTimeout(() => {
-      setOpenActionId((current) => (current === id ? null : current));
-    }, 180);
-  };
 
   // Filters
   const [singleDate, setSingleDate] = useState('');
@@ -286,10 +265,6 @@ export default function SalesHistory({ user }) {
                       <td className="sales-admin-actions">
                         <div
                           className="action-menu"
-                          onMouseEnter={(event) => openActionMenu(s.id, event)}
-                          onMouseLeave={() => closeActionMenu(s.id)}
-                          onFocus={(event) => openActionMenu(s.id, event)}
-                          onBlur={() => closeActionMenu(s.id)}
                         >
                           <button
                             className="action-menu-trigger"
@@ -300,7 +275,7 @@ export default function SalesHistory({ user }) {
                             ⋮
                           </button>
                           {openActionId === s.id && (
-                            <div className={`action-menu-dropdown${actionMenuDirection === 'up' ? ' open-up' : ''}`}>
+                            <div className="action-menu-dropdown">
                               <button onClick={() => { setOpenActionId(null); handleReceiptAction(s.id); }} disabled={reprinting === s.id}>
                                 {reprinting === s.id ? '⏳ Loading...' : '👁 Preview'}
                               </button>

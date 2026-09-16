@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(new Date());
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
+const formatTime = (value) => {
+  if (!value) return '';
+  const parsed = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(value)
+    ? new Date(`${value.replace(' ', 'T')}Z`)
+    : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleTimeString('en-PK', { timeZone: 'Asia/Karachi', hour: '2-digit', minute: '2-digit' });
+};
 
 export default function DailyExpenses({ user }) {
   const [date, setDate] = useState(today());
@@ -12,6 +19,7 @@ export default function DailyExpenses({ user }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const canViewExpenses = user.role === 'owner' || user.role === 'branch_manager';
 
   async function loadExpenses() {
@@ -68,6 +76,17 @@ export default function DailyExpenses({ user }) {
   }
 
   const total = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const categoryMap = expenses.reduce((groups, expense) => {
+    const category = String(expense.category || 'Uncategorized').trim() || 'Uncategorized';
+    const key = category.toLocaleLowerCase();
+    const group = groups.get(key) || { category, amount: 0, count: 0, details: [] };
+    group.amount += Number(expense.amount || 0);
+    group.count += 1;
+    group.details.push(expense);
+    groups.set(key, group);
+    return groups;
+  }, new Map());
+  const expenseCategories = Array.from(categoryMap.values()).sort((first, second) => second.amount - first.amount);
 
   return (
     <div>
@@ -93,6 +112,10 @@ export default function DailyExpenses({ user }) {
       {canViewExpenses && <div className="card" style={{ maxWidth: 980, marginTop: 16 }}>
         <div className="section-title" style={{ marginBottom: 12 }}>Expenses for {date}</div>
         {loading ? <div className="page-loading"><div className="spinner" style={{ width: 32, height: 32 }} /></div> : expenses.length === 0 ? <p>No expenses recorded for this date.</p> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Category</th><th>Branch</th><th>Notes</th><th>Amount</th><th /></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.category}</td><td>{expense.branch_name}</td><td>{expense.notes || '—'}</td><td>{formatMoney(expense.amount)}</td><td><button className="btn btn-danger btn-sm" type="button" onClick={() => remove(expense.id)}>Delete</button></td></tr>)}</tbody></table></div>}
+      </div>}
+      {canViewExpenses && <div className="card profit-loss-expense-panel daily-expense-breakdown" style={{ maxWidth: 980, marginTop: 16 }}>
+        <div className="profit-loss-expense-heading"><div><div className="section-title">Expense breakdown</div><p style={{ margin: 0 }}>Merged categories for {date}.</p></div></div>
+        {expenseCategories.length === 0 ? <p className="profit-loss-empty">No expenses recorded for this date.</p> : <div className="profit-loss-expense-table"><div className="profit-loss-expense-row profit-loss-expense-header"><span>Category</span><span>Entries</span><span>Amount</span></div>{expenseCategories.map((item) => <React.Fragment key={item.category}><button type="button" className="profit-loss-expense-row profit-loss-expense-category" onClick={() => setExpandedCategories((current) => ({ ...current, [item.category]: !current[item.category] }))} aria-expanded={Boolean(expandedCategories[item.category])}><span><span className="profit-loss-expense-chevron">{expandedCategories[item.category] ? '⌄' : '›'}</span>{item.category}</span><span>{item.count}</span><strong>{formatMoney(item.amount)}</strong></button>{expandedCategories[item.category] && <div className="profit-loss-expense-details">{item.details.map((detail) => <div className="profit-loss-expense-detail" key={detail.id}><span>{formatTime(detail.created_at) || 'Time unavailable'}</span><span>{detail.branch_name}{detail.notes ? ` · ${detail.notes}` : ''}</span><strong>{formatMoney(detail.amount)}</strong></div>)}</div>}</React.Fragment>)}</div>}
       </div>}
     </div>
   );

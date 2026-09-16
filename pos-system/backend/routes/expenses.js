@@ -6,6 +6,10 @@ const { requireAuth, requireBranchManager, requireCashierOrAbove } = require('..
 const router = express.Router();
 router.use(requireAuth);
 
+function pakistanDate(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date);
+}
+
 async function ensureTable() {
   await db.prepare(`CREATE TABLE IF NOT EXISTS expenses (
     id TEXT PRIMARY KEY,
@@ -28,7 +32,7 @@ function branchFilter(req, params) {
 router.get('/', requireBranchManager, async (req, res, next) => {
   try {
     await ensureTable();
-    const expenseDate = req.query.date || new Date().toISOString().slice(0, 10);
+    const expenseDate = req.query.date || pakistanDate();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
     const params = [expenseDate];
     const filter = branchFilter(req, params);

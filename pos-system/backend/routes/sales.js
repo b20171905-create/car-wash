@@ -17,6 +17,10 @@ const router = express.Router();
 // All /api/sales routes require a valid JWT
 router.use(requireAuth);
 
+function pakistanDate(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Karachi' }).format(date);
+}
+
 function getPakistanDayBounds(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Karachi',
@@ -361,7 +365,7 @@ router.get('/monthly-summary', requireBranchManager, async (req, res, next) => {
 router.get('/month-daily-summary', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const month = req.query.month || pakistanDate().slice(0, 7);
   if (!/^\d{4}-\d{2}$/.test(month)) {
     return res.status(400).json({ error: 'month must use YYYY-MM format' });
   }

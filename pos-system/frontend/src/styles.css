@@ -2448,15 +2448,17 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
   }
   
   .action-menu-dropdown {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    bottom: auto !important;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto !important;
+    bottom: max(12px, env(safe-area-inset-bottom));
     transform: none;
     background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 6px;
-    min-width: 140px;
+    min-width: 0;
+    width: auto;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
