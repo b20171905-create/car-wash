@@ -34,7 +34,7 @@ router.get('/profit-loss', async (req, res, next) => {
       expenseParams.push(requestedBranchId);
     }
 
-    const [sales, expenses, categories] = await Promise.all([
+    const [sales, expenses, categories, dailySales, dailyExpenses] = await Promise.all([
       db.prepare(`SELECT COALESCE(SUM(s.total), 0) AS revenue, COUNT(s.id) AS sale_count
         FROM sales s
         WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at <= ?${salesFilter}`).get(...salesParams),
@@ -45,10 +45,24 @@ router.get('/profit-loss', async (req, res, next) => {
         FROM expenses e
         WHERE e.expense_date >= ? AND e.expense_date <= ?${expenseFilter}
         GROUP BY e.category ORDER BY amount DESC`).all(...expenseParams),
+      db.prepare(`SELECT DATE(s.created_at) AS day, COALESCE(SUM(s.total), 0) AS revenue
+        FROM sales s
+        WHERE s.status = 'paid' AND s.created_at >= ? AND s.created_at <= ?${salesFilter}
+        GROUP BY DATE(s.created_at) ORDER BY day`).all(...salesParams),
+      db.prepare(`SELECT e.expense_date AS day, COALESCE(SUM(e.amount), 0) AS expenses
+        FROM expenses e
+        WHERE e.expense_date >= ? AND e.expense_date <= ?${expenseFilter}
+        GROUP BY e.expense_date ORDER BY day`).all(...expenseParams),
     ]);
 
     const revenue = Number(sales?.revenue || 0);
     const expensesTotal = Number(expenses?.expenses || 0);
+    const dailyByDate = new Map();
+    for (const item of dailySales) dailyByDate.set(String(item.day).slice(0, 10), { revenue: Number(item.revenue || 0), expenses: 0 });
+    for (const item of dailyExpenses) {
+      const day = String(item.day).slice(0, 10);
+      dailyByDate.set(day, { ...(dailyByDate.get(day) || { revenue: 0 }), expenses: Number(item.expenses || 0) });
+    }
     res.json({
       from,
       to,
@@ -59,6 +73,7 @@ router.get('/profit-loss', async (req, res, next) => {
       expense_count: Number(expenses?.expense_count || 0),
       profit: revenue - expensesTotal,
       categories,
+      daily: Array.from(dailyByDate.entries()).map(([day, values]) => ({ day, ...values })),
     });
   } catch (error) {
     next(error);
