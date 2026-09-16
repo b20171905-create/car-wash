@@ -783,8 +783,14 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 /* ── Profit & Loss ──────────────────────────────────── */
 .profit-loss-page {
+  width: 100%;
   max-width: 1180px;
+  padding: clamp(16px, 2.5vw, 30px);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
   color: #f1f1f1;
+  background: linear-gradient(145deg, #171b1c 0%, #111516 58%, #101a19 100%);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
 }
 
 .profit-loss-heading {
@@ -817,7 +823,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 .profit-loss-date input,
 .profit-loss-branch,
 .profit-loss-expense-heading input {
-  height: 38px;
+  height: 36px;
+  min-height: 36px;
   border: 1px solid #383838;
   border-radius: 6px;
   background: #1b1b1b;
@@ -881,7 +888,7 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 .profit-loss-chart-panel h2,
 .profit-loss-expense-panel h2 { color: #eeeeee; font-size: 1.1rem; margin-bottom: 16px; }
 .profit-loss-chart-wrap { border-top: 1px solid transparent; }
-.profit-loss-chart { display: block; width: 100%; height: 285px; overflow: visible; }
+.profit-loss-chart { display: block; width: 100%; height: auto; aspect-ratio: 640 / 250; overflow: visible; }
 .profit-loss-grid-line { stroke: #292929; stroke-width: 1; }
 .profit-loss-axis-label { fill: #777; font-size: 10px; }
 .profit-loss-area { fill: rgba(57, 112, 190, 0.16); }
@@ -917,12 +924,16 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 }
 
 @media (max-width: 600px) {
+  .profit-loss-page { padding: 16px 12px; border-radius: 12px; }
   .profit-loss-kpis { grid-template-columns: 1fr; gap: 10px; }
-  .profit-loss-filters { width: 100%; }
-  .profit-loss-date input { width: 132px; }
-  .profit-loss-branch { flex: 1; min-width: 132px; }
-  .profit-loss-chart { min-width: 560px; }
-  .profit-loss-chart-wrap { overflow-x: auto; }
+  .profit-loss-filters { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .profit-loss-date input,
+  .profit-loss-branch { width: 100%; min-width: 0; }
+  .profit-loss-branch { grid-column: 1 / -1; }
+  .profit-loss-chart { width: 100%; }
+  .profit-loss-expense-heading { align-items: stretch; flex-direction: column; gap: 8px; }
+  .profit-loss-expense-heading h2 { max-width: none; }
+  .profit-loss-expense-heading input { width: 100%; }
 }
 
 .stat-icon {
