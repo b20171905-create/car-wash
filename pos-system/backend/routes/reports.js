@@ -25,6 +25,13 @@ function normalizeReportDay(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
 }
 
+function getWeekStart(day) {
+  const date = new Date(`${day}T12:00:00Z`);
+  const offset = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - offset);
+  return date.toISOString().slice(0, 10);
+}
+
 router.get('/profit-loss', async (req, res, next) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -77,6 +84,14 @@ router.get('/profit-loss', async (req, res, next) => {
       const day = normalizeReportDay(item.day);
       if (day) dailyByDate.set(day, { ...(dailyByDate.get(day) || { revenue: 0 }), expenses: Number(item.expenses || 0) });
     }
+    const weeklyByStart = new Map();
+    for (const [day, values] of dailyByDate) {
+      const weekStart = getWeekStart(day);
+      const week = weeklyByStart.get(weekStart) || { revenue: 0, expenses: 0 };
+      week.revenue += values.revenue;
+      week.expenses += values.expenses;
+      weeklyByStart.set(weekStart, week);
+    }
     res.json({
       from,
       to,
@@ -88,6 +103,7 @@ router.get('/profit-loss', async (req, res, next) => {
       profit: revenue - expensesTotal,
       categories,
       daily: Array.from(dailyByDate.entries()).map(([day, values]) => ({ day, ...values })),
+      weekly: Array.from(weeklyByStart.entries()).sort(([first], [second]) => first.localeCompare(second)).map(([week, values]) => ({ week, ...values })),
     });
   } catch (error) {
     next(error);

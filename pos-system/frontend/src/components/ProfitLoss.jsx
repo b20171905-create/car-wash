@@ -2,7 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../api';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const firstOfMonth = () => `${today().slice(0, 8)}01`;
+const currentMonth = () => today().slice(0, 7);
+const monthDateRange = (month) => {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  return { from: `${month}-01`, to: `${month}-${String(lastDay).padStart(2, '0')}` };
+};
 const formatMoney = (value) => `Rs. ${Number(value || 0).toFixed(2)}`;
 const formatCompactMoney = (value) => `Rs. ${Number(value || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 })}`;
 const formatChartDate = (value) => {
@@ -10,6 +15,7 @@ const formatChartDate = (value) => {
   if (!match) return '—';
   return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12)).toLocaleDateString('en-PK', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
+const formatWeek = (value) => formatChartDate(value);
 
 function buildChart(data) {
   const width = 640;
@@ -24,6 +30,7 @@ function buildChart(data) {
 }
 
 export default function ProfitLoss({ user }) {
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth());
   const [branchId, setBranchId] = useState('');
   const [branches, setBranches] = useState([]);
   const [report, setReport] = useState(null);
@@ -35,7 +42,7 @@ export default function ProfitLoss({ user }) {
     setLoading(true);
     setMessage(null);
     try {
-      const data = await api.getProfitLoss({ from: firstOfMonth(), to: today(), branch_id: branchId });
+      const data = await api.getProfitLoss({ ...monthDateRange(selectedMonth), branch_id: branchId });
       setReport(data);
     } catch (error) {
       setReport(null);
@@ -51,13 +58,15 @@ export default function ProfitLoss({ user }) {
     }
   }, [user.role]);
 
-  useEffect(() => { loadReport(); }, [branchId]);
+  useEffect(() => { loadReport(); }, [selectedMonth, branchId]);
 
   const profit = Number(report?.profit || 0);
   const revenue = Number(report?.revenue || 0);
   const expenses = Number(report?.expenses || 0);
   const margin = revenue ? (profit / revenue) * 100 : 0;
   const daily = report?.daily || [];
+  const weekly = report?.weekly || [];
+  const weeklyMax = Math.max(...weekly.flatMap((item) => [Number(item.revenue || 0), Number(item.expenses || 0)]), 1);
   const chart = buildChart(daily);
   const filteredCategories = (report?.categories || []).filter((item) => item.category.toLowerCase().includes(categorySearch.trim().toLowerCase()));
 
@@ -70,6 +79,7 @@ export default function ProfitLoss({ user }) {
           <h1>Profit &amp; loss</h1>
         </div>
         <div className="profit-loss-filters">
+          <label className="profit-loss-month"><span className="sr-only">Report month</span><input id="profit-loss-month" type="month" value={selectedMonth} max={currentMonth()} onChange={(event) => setSelectedMonth(event.target.value || currentMonth())} /></label>
           {user.role === 'owner' && <select id="profit-loss-branch" className="profit-loss-branch" value={branchId} onChange={(event) => setBranchId(event.target.value)}><option value="">All branches</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>}
         </div>
       </div>
@@ -80,6 +90,14 @@ export default function ProfitLoss({ user }) {
           <div className="profit-loss-kpi"><div className="profit-loss-kpi-label">▤ &nbsp; Operating expenses</div><strong>{formatCompactMoney(expenses)}</strong><span>{report.expense_count} entries</span></div>
           <div className={`profit-loss-kpi profit-loss-kpi-positive${profit < 0 ? ' is-negative' : ''}`}><div className="profit-loss-kpi-label">↗ &nbsp; Net profit</div><strong>{formatCompactMoney(profit)}</strong><span>{margin.toFixed(1)}% margin</span></div>
         </div>
+
+        <section className="profit-loss-weekly-panel">
+          <div className="profit-loss-section-heading">
+            <div><h2>Weekly analysis</h2><p>Revenue and expenses compared by week</p></div>
+            <div className="profit-loss-legend"><span><i className="profit-loss-legend-revenue" />Revenue</span><span><i className="profit-loss-legend-expenses" />Expenses</span></div>
+          </div>
+          {weekly.length === 0 ? <p className="profit-loss-empty">No weekly activity recorded for this period.</p> : <div className="profit-loss-weekly-chart">{weekly.map((item) => <div className="profit-loss-week" key={item.week}><div className="profit-loss-week-bars"><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.revenue)}</span><div className="profit-loss-week-bar profit-loss-week-bar-revenue" style={{ height: `${Math.max((Number(item.revenue || 0) / weeklyMax) * 100, 2)}%` }} /></div><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.expenses)}</span><div className="profit-loss-week-bar profit-loss-week-bar-expenses" style={{ height: `${Math.max((Number(item.expenses || 0) / weeklyMax) * 100, 2)}%` }} /></div></div><strong>Week of {formatWeek(item.week)}</strong></div>)}</div>}
+        </section>
 
         <div className="profit-loss-grid">
           <section className="profit-loss-chart-panel">
