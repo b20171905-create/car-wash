@@ -60,10 +60,6 @@ export default function SalesHistory({ user }) {
   const [paymentFilter, setPaymentFilter] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState('');
-  const [exportFrom, setExportFrom] = useState('');
-  const [exportTo, setExportTo] = useState('');
-  const [exporting, setExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState(null);
 
   const resetFilters = () => {
     const emptyValues = {
@@ -156,28 +152,6 @@ export default function SalesHistory({ user }) {
     }
   }
 
-  async function handleExport(allData = false) {
-    if (user.role !== 'owner' || exporting) return;
-    setExporting(true);
-    setExportMessage(null);
-    try {
-      const result = await api.downloadExcelExport(allData ? {} : { from: exportFrom, to: exportTo });
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = result.filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setExportMessage({ type: 'success', text: 'Excel file downloaded.' });
-    } catch (error) {
-      setExportMessage({ type: 'error', text: error.message });
-    } finally {
-      setExporting(false);
-    }
-  }
-
   const paymentBadge = (method) => {
     const map = { cash: 'badge-green', card: 'badge-teal', upi: 'badge-purple', wallet: 'badge-amber', other: 'badge-gray' };
     return map[method] || 'badge-gray';
@@ -251,35 +225,6 @@ export default function SalesHistory({ user }) {
           </div>
         </div>
       </div>
-
-      {/* Export panel */}
-      {user.role === 'owner' && (
-        <div className="card card-sm" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-          <div>
-            <div className="section-title" style={{ fontSize: '1rem' }}>Export Data</div>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-              Download Excel using the selected dates, or export all records.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
-            <div>
-              <label className="form-label" htmlFor="sales-export-from">From date</label>
-              <input id="sales-export-from" className="form-input" type="date" value={exportFrom} onChange={(event) => setExportFrom(event.target.value)} />
-            </div>
-            <div>
-              <label className="form-label" htmlFor="sales-export-to">To date</label>
-              <input id="sales-export-to" className="form-input" type="date" value={exportTo} onChange={(event) => setExportTo(event.target.value)} />
-            </div>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => handleExport(true)} disabled={exporting}>
-              All data
-            </button>
-            <button id="sales-history-export-btn" className="btn btn-primary btn-sm" type="button" onClick={() => handleExport(false)} disabled={exporting}>
-              {exporting ? <span className="spinner" /> : '↓ Export Excel'}
-            </button>
-          </div>
-          {exportMessage && <div className={`status-msg ${exportMessage.type}`} style={{ flexBasis: '100%', margin: 0 }}>{exportMessage.text}</div>}
-        </div>
-      )}
 
       {/* Table */}
       <div className="card sales-history-table">

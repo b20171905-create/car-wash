@@ -975,7 +975,13 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   .profit-loss-weekly-panel { padding: 14px; }
   .profit-loss-section-heading { flex-direction: column; }
   .profit-loss-weekly-chart { gap: 5px; }
-  .profit-loss-week-value { font-size: 0.58rem; }
+  .profit-loss-week-value { font-size: 0; line-height: 0; }
+  .profit-loss-week-bar-group { width: min(18px, 42%); }
+  .profit-loss-week-bars { gap: 3px; }
+  .profit-loss-week strong { font-size: 0.62rem; white-space: nowrap; }
+  .profit-loss-expense-detail { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 8px 10px 8px 24px; }
+  .profit-loss-expense-detail span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; color: var(--text-dim); }
+  .profit-loss-expense-detail strong { grid-column: 2; grid-row: 1; }
 }
 
 .stat-icon {
@@ -2445,6 +2451,7 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
     position: absolute;
     right: 0;
     top: 100%;
+    bottom: auto !important;
     transform: none;
     background: var(--bg2);
     border: 1px solid var(--border);
@@ -2454,11 +2461,6 @@ tr:nth-last-child(-n + 2) .action-menu-dropdown {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
-  tr:nth-last-child(-n + 2) .action-menu-dropdown {
-    top: auto;
-    bottom: 100%;
-  }
-  
   .action-menu-dropdown button {
     display: block;
     width: 100%;
