@@ -27,6 +27,20 @@ const getMonthWindow = (report, daily) => {
   return window;
 };
 
+const getSevenDayWindow = (report, monthly) => {
+  const todayKey = today();
+  const reportEnd = report?.to && report.to > todayKey ? todayKey : report?.to;
+  const end = new Date(`${reportEnd || todayKey}T12:00:00Z`);
+  const valuesByDay = new Map(monthly.map((item) => [item.day, item]));
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - (6 - index));
+    const day = date.toISOString().slice(0, 10);
+    const values = valuesByDay.get(day);
+    return { day, revenue: Number(values?.revenue || 0), expenses: Number(values?.expenses || 0) };
+  }).filter((item) => !report?.from || item.day >= report.from);
+};
+
 function buildChart(data) {
   const width = 640;
   const height = 250;
@@ -76,7 +90,7 @@ export default function ProfitLoss({ user }) {
   const margin = revenue ? (profit / revenue) * 100 : 0;
   const daily = report?.daily || [];
   const monthly = getMonthWindow(report, daily);
-  const weekly = monthly.slice(-7);
+  const weekly = getSevenDayWindow(report, monthly);
   const chart = buildChart(monthly);
   const weeklyMax = Math.max(...weekly.flatMap((item) => [Number(item.revenue || 0), Number(item.expenses || 0)]), 1);
   const filteredCategories = (report?.categories || []).filter((item) => item.category.toLowerCase().includes(categorySearch.trim().toLowerCase()));
@@ -90,7 +104,6 @@ export default function ProfitLoss({ user }) {
           <h1>Profit &amp; loss</h1>
         </div>
         <div className="profit-loss-filters">
-          <label className="profit-loss-month"><span className="sr-only">Report month</span><input id="profit-loss-month" type="month" value={selectedMonth} max={currentMonth()} onChange={(event) => setSelectedMonth(event.target.value || currentMonth())} /></label>
           {user.role === 'owner' && <select id="profit-loss-branch" className="profit-loss-branch" value={branchId} onChange={(event) => setBranchId(event.target.value)}><option value="">All branches</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select>}
         </div>
       </div>
@@ -104,7 +117,7 @@ export default function ProfitLoss({ user }) {
 
         <section className="profit-loss-weekly-panel">
           <div className="profit-loss-section-heading">
-            <div><h2>7-day profit &amp; sales analysis</h2><p>Revenue and expenses compared day by day</p></div>
+            <div><h2>Last 7 days profit &amp; sales analysis</h2><p>Revenue and expenses compared day by day</p></div>
             <div className="profit-loss-legend"><span><i className="profit-loss-legend-revenue" />Revenue</span><span><i className="profit-loss-legend-expenses" />Expenses</span></div>
           </div>
           {weekly.length === 0 ? <p className="profit-loss-empty">No weekly activity recorded for this period.</p> : <div className="profit-loss-weekly-chart">{weekly.map((item) => <div className="profit-loss-week" key={item.day}><div className="profit-loss-week-bars"><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.revenue)}</span><div className="profit-loss-week-bar profit-loss-week-bar-revenue" style={{ height: `${Math.max((Number(item.revenue || 0) / weeklyMax) * 100, 2)}%` }} /></div><div className="profit-loss-week-bar-group"><span className="profit-loss-week-value">{formatCompactMoney(item.expenses)}</span><div className="profit-loss-week-bar profit-loss-week-bar-expenses" style={{ height: `${Math.max((Number(item.expenses || 0) / weeklyMax) * 100, 2)}%` }} /></div></div><strong>{formatChartDate(item.day)}</strong></div>)}</div>}
@@ -112,7 +125,7 @@ export default function ProfitLoss({ user }) {
 
         <div className="profit-loss-grid">
           <section className="profit-loss-chart-panel">
-            <h2>Monthly revenue &amp; expenses</h2>
+            <div className="profit-loss-chart-heading"><h2>Monthly revenue &amp; expenses</h2><label className="profit-loss-month"><span className="sr-only">Report month</span><input id="profit-loss-month" type="month" value={selectedMonth} max={currentMonth()} onChange={(event) => setSelectedMonth(event.target.value || currentMonth())} /></label></div>
             {monthly.length === 0 ? <p className="profit-loss-empty">No monthly activity recorded for this period.</p> : <div className="profit-loss-chart-wrap">
               <svg className="profit-loss-chart" viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Revenue versus expenses over time">
                 {[0, 0.25, 0.5, 0.75, 1].map((level) => <g key={level}><line x1={chart.padding.left} x2={chart.width - chart.padding.right} y1={chart.y(chart.max * level)} y2={chart.y(chart.max * level)} className="profit-loss-grid-line" /><text x={chart.padding.left - 8} y={chart.y(chart.max * level) + 4} textAnchor="end" className="profit-loss-axis-label">{formatCompactMoney(chart.max * level)}</text></g>)}

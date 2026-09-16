@@ -908,6 +908,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 }
 .profit-loss-chart-panel h2,
 .profit-loss-expense-panel h2 { color: var(--text); font-size: 1.1rem; margin-bottom: 16px; }
+.profit-loss-chart-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.profit-loss-chart-heading h2 { margin-bottom: 16px; }
 .profit-loss-chart-wrap { border-top: 1px solid transparent; }
 .profit-loss-chart { display: block; width: 100%; height: clamp(220px, 25vw, 300px); overflow: visible; }
 .profit-loss-grid-line { stroke: var(--border); stroke-width: 1; }
@@ -956,6 +958,9 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
   .profit-loss-expense-heading { align-items: stretch; flex-direction: column; gap: 8px; }
   .profit-loss-expense-heading h2 { max-width: none; }
   .profit-loss-expense-heading input { width: 100%; }
+  .profit-loss-chart-heading { align-items: stretch; flex-direction: column; gap: 8px; }
+  .profit-loss-month,
+  .profit-loss-month input { width: 100%; }
   .profit-loss-chart-panel,
   .profit-loss-expense-panel { padding: 14px; }
   .profit-loss-weekly-panel { padding: 14px; }
