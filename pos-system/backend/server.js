@@ -28,7 +28,8 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     const isHostingerAppOrigin = /^https:\/\/[-a-z0-9]+\.hostingersite\.com$/i.test(origin);
-    if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin) || isHostingerAppOrigin) {
+    const isProductionDomainOrigin = /^https?:\/\/(www\.)?tigercarwash\.shop$/i.test(origin);
+    if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin) || isHostingerAppOrigin || isProductionDomainOrigin) {
       return callback(null, true);
     }
     return callback(new Error('CORS not allowed'));
