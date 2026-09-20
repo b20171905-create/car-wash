@@ -90,7 +90,7 @@ if (fs.existsSync(publicPath)) {
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: err.message || 'Server error' });
+  res.status(err.statusCode || 500).json({ error: err.message || 'Server error' });
 });
 
 const PORT = process.env.PORT || 4000;

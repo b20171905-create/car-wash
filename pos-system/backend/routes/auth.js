@@ -27,7 +27,7 @@ router.get('/status', async (req, res) => {
       envOwnerEmail: process.env.OWNER_EMAIL || null,
     });
   } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
+    res.status(error.statusCode || 500).json({ ok: false, error: error.message });
   }
 });
 

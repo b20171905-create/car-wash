@@ -5,16 +5,16 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 let connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  console.warn('[DB Config] DATABASE_URL not set. Running in demo mode without database.');
-  connectionString = 'sqlite:///:memory:'; // Fallback for local development
+const databaseConfigured = Boolean(connectionString && connectionString.trim());
+if (!databaseConfigured) {
+  console.warn('[DB Config] DATABASE_URL not set. Database-backed features are unavailable.');
 }
 
 // Defensive cleanup: strip accidental wrapping quotes/whitespace that some
 // panel UIs or copy-pastes introduce — these can silently break both the
 // new URL() parse and the regex fallback below, causing a fallback to
 // localhost with empty credentials.
-connectionString = connectionString.trim().replace(/^['"]|['"]$/g, '');
+connectionString = (connectionString || '').trim().replace(/^['"]|['"]$/g, '');
 
 // One-time diagnostic (no secrets leaked): confirms what actually reached
 // process.env vs. what's shown in the hPanel editor. Safe to remove once
@@ -26,6 +26,7 @@ console.log(
 );
 
 function getDbType() {
+  if (!databaseConfigured) return null;
   const configuredType = (process.env.DB_CLIENT || '').toLowerCase();
   if (configuredType === 'mysql' || configuredType === 'postgres') return configuredType;
   const normalizedConnectionString = (connectionString || '').toLowerCase();
@@ -33,6 +34,13 @@ function getDbType() {
 }
 
 const dbType = getDbType();
+
+function databaseUnavailableError() {
+  const error = new Error('Database is not configured. Set DATABASE_URL before using this API.');
+  error.statusCode = 503;
+  error.code = 'DATABASE_NOT_CONFIGURED';
+  return error;
+}
 
 function normalizeSql(sql, params) {
   let replaced = 0;
@@ -136,7 +144,7 @@ function buildPostgresPool() {
   });
 }
 
-const pool = dbType === 'mysql' ? buildMysqlPool() : buildPostgresPool();
+const pool = dbType === 'mysql' ? buildMysqlPool() : dbType === 'postgres' ? buildPostgresPool() : null;
 
 let databaseReady = Promise.resolve();
 
@@ -174,6 +182,7 @@ function prepareStatement(sql, executor = pool) {
 
   return {
     all: async (...args) => {
+      if (!databaseConfigured) throw databaseUnavailableError();
       await databaseReady.catch(() => {});
       const params = args.flat();
       return executeWithRetry(async () => {
@@ -187,6 +196,7 @@ function prepareStatement(sql, executor = pool) {
       });
     },
     get: async (...args) => {
+      if (!databaseConfigured) throw databaseUnavailableError();
       await databaseReady.catch(() => {});
       const params = args.flat();
       return executeWithRetry(async () => {
@@ -200,6 +210,7 @@ function prepareStatement(sql, executor = pool) {
       });
     },
     run: async (...args) => {
+      if (!databaseConfigured) throw databaseUnavailableError();
       await databaseReady.catch(() => {});
       const params = args.flat();
       return executeWithRetry(async () => {
@@ -224,6 +235,7 @@ function prepareStatement(sql, executor = pool) {
 const db = {
   prepare: prepareStatement,
   query: async (sql, params = []) => {
+    if (!databaseConfigured) throw databaseUnavailableError();
     await databaseReady.catch(() => {});
     return executeWithRetry(async () => {
       if (dbType === 'mysql') {
@@ -234,6 +246,7 @@ const db = {
     });
   },
   transaction: (callback) => async () => {
+    if (!databaseConfigured) throw databaseUnavailableError();
     await databaseReady.catch(() => {});
     return executeWithRetry(async () => {
       if (dbType === 'mysql') {
@@ -266,10 +279,11 @@ const db = {
     });
   },
   pool,
-  close: () => pool.end(),
+  close: () => pool?.end(),
 };
 
 databaseReady = (async () => {
+  if (!databaseConfigured) return;
   try {
     const schemaFile = dbType === 'mysql' ? 'schema.mysql.sql' : 'schema.sql';
     const migrationFile = dbType === 'mysql' ? 'migrate_vehicle_types.mysql.sql' : 'migrate_vehicle_types.sql';
