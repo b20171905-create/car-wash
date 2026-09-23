@@ -38,8 +38,12 @@ export default function Dashboard({ user }) {
   const [selectedMonthSales, setSelectedMonthSales] = useState([]);
   const [selectedHourlyDate, setSelectedHourlyDate] = useState(formatPkDateKey(new Date()));
   const [hourlySalesData, setHourlySalesData] = useState([]);
-  const [selectedPieDate, setSelectedPieDate] = useState(formatPkDateKey(new Date()));
-  const [pieSummary, setPieSummary] = useState([]);
+  const [branchPieDate, setBranchPieDate] = useState(formatPkDateKey(new Date()));
+  const [branchPieSummary, setBranchPieSummary] = useState([]);
+  const [vehiclePieDate, setVehiclePieDate] = useState(formatPkDateKey(new Date()));
+  const [vehiclePieSummary, setVehiclePieSummary] = useState([]);
+  const [paymentPieDate, setPaymentPieDate] = useState(formatPkDateKey(new Date()));
+  const [paymentPieSummary, setPaymentPieSummary] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,8 +106,16 @@ export default function Dashboard({ user }) {
   }, [selectedHourlyDate]);
 
   useEffect(() => {
-    api.getSummary(selectedPieDate).then(setPieSummary).catch(() => setPieSummary([]));
-  }, [selectedPieDate]);
+    api.getSummary(branchPieDate).then(setBranchPieSummary).catch(() => setBranchPieSummary([]));
+  }, [branchPieDate]);
+
+  useEffect(() => {
+    api.getSummary(vehiclePieDate).then(setVehiclePieSummary).catch(() => setVehiclePieSummary([]));
+  }, [vehiclePieDate]);
+
+  useEffect(() => {
+    api.getSummary(paymentPieDate).then(setPaymentPieSummary).catch(() => setPaymentPieSummary([]));
+  }, [paymentPieDate]);
 
   const totalRevenue = summary.reduce((s, b) => s + Number(b.revenue), 0);
   const totalToday = summary.reduce((s, b) => s + Number(b.today_revenue), 0);
@@ -111,7 +123,7 @@ export default function Dashboard({ user }) {
   const todaySales = summary.reduce((s, b) => s + Number(b.today_count || 0), 0);
   const topBranch = summary.reduce((best, branch) => Number(branch.revenue) > Number(best?.revenue || 0) ? branch : best, summary[0] || { branch_name: 'N/A', revenue: 0 });
   const bestDay = weeklySales.reduce((best, day) => Number(day.revenue) > Number(best?.revenue || 0) ? day : best, weeklySales[0] || { label: 'N/A', revenue: 0 });
-  const dailyBranchSales = pieSummary.map((branch, index) => ({
+  const dailyBranchSales = branchPieSummary.map((branch, index) => ({
     ...branch,
     dailyRevenue: Number(branch.today_revenue || 0),
     color: CHART_COLORS[index % CHART_COLORS.length],
@@ -127,8 +139,8 @@ export default function Dashboard({ user }) {
   ];
   const dailyVehicleSales = vehicleOptions.map((vehicle) => ({
     ...vehicle,
-    dailyRevenue: pieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_revenue`] || 0), 0),
-    count: pieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
+    dailyRevenue: vehiclePieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_revenue`] || 0), 0),
+    count: vehiclePieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
   }));
   const dailyVehicleRevenueTotal = dailyVehicleSales.reduce((total, vehicle) => total + vehicle.dailyRevenue, 0);
   const paymentOptions = [
@@ -139,8 +151,8 @@ export default function Dashboard({ user }) {
   const dailyPaymentSales = paymentOptions.map((payment) => {
     return {
       ...payment,
-      dailyRevenue: pieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_revenue`] || 0), 0),
-      count: pieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_count`] || 0), 0),
+      dailyRevenue: paymentPieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_revenue`] || 0), 0),
+      count: paymentPieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_count`] || 0), 0),
     };
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
@@ -296,14 +308,12 @@ export default function Dashboard({ user }) {
           </div>
         </div>
         <div className="daily-pie-charts">
-          <div className="form-group" style={{ maxWidth: 220, marginBottom: 18 }}>
-            <label className="form-label" htmlFor="pie-sales-date">Calendar date</label>
-            <input id="pie-sales-date" className="form-input" type="date" value={selectedPieDate} onChange={(event) => setSelectedPieDate(event.target.value)} />
-          </div>
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Branch</h3>
-              <p>Revenue share across all branches for {selectedPieDate}</p>
+              <p>Revenue share across all branches for {branchPieDate}</p>
+              <label className="form-label" htmlFor="branch-pie-date">Calendar date</label>
+              <input id="branch-pie-date" className="form-input" type="date" value={branchPieDate} onChange={(event) => setBranchPieDate(event.target.value)} />
             </div>
             {dailyRevenueTotal === 0 ? (
               <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-title">No sales for this date</div></div>
@@ -325,7 +335,9 @@ export default function Dashboard({ user }) {
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Vehicle Type</h3>
-              <p>Revenue across all billed vehicle types for {selectedPieDate}</p>
+              <p>Revenue across all billed vehicle types for {vehiclePieDate}</p>
+              <label className="form-label" htmlFor="vehicle-pie-date">Calendar date</label>
+              <input id="vehicle-pie-date" className="form-input" type="date" value={vehiclePieDate} onChange={(event) => setVehiclePieDate(event.target.value)} />
             </div>
             {dailyVehicleRevenueTotal === 0 ? (
               <div className="empty-state"><div className="empty-icon">🚗</div><div className="empty-title">No vehicle sales for this date</div></div>
@@ -347,7 +359,9 @@ export default function Dashboard({ user }) {
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Payment</h3>
-              <p>Revenue grouped by payment method for {selectedPieDate}</p>
+              <p>Revenue grouped by payment method for {paymentPieDate}</p>
+              <label className="form-label" htmlFor="payment-pie-date">Calendar date</label>
+              <input id="payment-pie-date" className="form-input" type="date" value={paymentPieDate} onChange={(event) => setPaymentPieDate(event.target.value)} />
             </div>
             {dailyPaymentRevenueTotal === 0 ? (
               <div className="empty-state"><div className="empty-icon">💳</div><div className="empty-title">No payment sales for this date</div></div>
