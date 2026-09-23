@@ -233,6 +233,32 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
 
+.cash-collection-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.cash-collection-date { min-width: 190px; margin: 0; }
+.cash-collection-hero { margin-top: 16px; padding: 28px; border: 1px solid var(--border-active); border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(13, 27, 34, 0.95)); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.cash-collection-hero span { color: var(--text-muted); font-size: 0.95rem; }
+.cash-collection-hero strong { color: var(--teal-light); font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1; }
+.cash-collection-hero strong.is-negative { color: var(--red); }
+.cash-collection-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.cash-collection-card { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.cash-collection-card span { display: block; color: var(--text-muted); font-size: 0.82rem; margin-bottom: 8px; }
+.cash-collection-card strong { color: var(--text); font-size: 1.25rem; }
+.cash-collection-breakdown { margin-top: 16px; }
+.cash-collection-equation { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; color: var(--text-muted); }
+.cash-collection-equation b { color: var(--text-dim); }
+.cash-collection-equation strong { color: var(--teal-light); }
+
+@media (max-width: 760px) {
+  .cash-collection-toolbar, .cash-collection-hero { align-items: stretch; flex-direction: column; }
+  .cash-collection-date { width: 100%; }
+  .cash-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+  .cash-collection-grid { grid-template-columns: 1fr; }
+  .cash-collection-equation { align-items: flex-start; flex-direction: column; }
+}
+
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border);
