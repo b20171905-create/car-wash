@@ -121,7 +121,7 @@ export const api = {
 
   deleteSale: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
 
-  getSummary: () => request('/sales/summary'),
+  getSummary: (date) => request(`/sales/summary${date ? `?date=${encodeURIComponent(date)}` : ''}`),
 
   getHourlySummary: (date) => request(`/sales/hourly-summary?date=${encodeURIComponent(date)}`),
 

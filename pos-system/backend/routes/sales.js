@@ -289,7 +289,9 @@ router.get('/hourly-summary', requireBranchManager, async (req, res, next) => {
 router.get('/summary', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const { start, end } = getPakistanDayBounds();
+  const bounds = req.query.date ? getPakistanDayBoundsForDate(req.query.date) : getPakistanDayBounds();
+  if (!bounds) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
+  const { start, end } = bounds;
 
   let query = `
     SELECT b.id, b.name as branch_name,
@@ -308,12 +310,18 @@ router.get('/summary', requireBranchManager, async (req, res, next) => {
            COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'coaster' THEN s.total ELSE 0 END), 0) as today_coaster_revenue,
            COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'coaster' THEN 1 END) as today_coaster_count,
            COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'truck' THEN s.total ELSE 0 END), 0) as today_truck_revenue,
-           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'truck' THEN 1 END) as today_truck_count
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND c.vehicle_type = 'truck' THEN 1 END) as today_truck_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'cash' THEN s.total ELSE 0 END), 0) as today_cash_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'cash' THEN 1 END) as today_cash_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'card' THEN s.total ELSE 0 END), 0) as today_card_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'card' THEN 1 END) as today_card_count,
+           COALESCE(SUM(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'upi' THEN s.total ELSE 0 END), 0) as today_upi_revenue,
+           COUNT(CASE WHEN s.created_at >= ? AND s.created_at < ? AND s.payment_method = 'upi' THEN 1 END) as today_upi_count
     FROM branches b
     LEFT JOIN sales s ON s.branch_id = b.id AND s.status = 'paid'
     LEFT JOIN customers c ON c.id = s.customer_id
   `;
-  const params = Array.from({ length: 14 }, () => [start, end]).flat();
+  const params = Array.from({ length: 17 }, () => [start, end]).flat();
 
   if (branchId) { query += ' WHERE b.id = ?'; params.push(branchId); }
   query += ' GROUP BY b.id ORDER BY revenue DESC';

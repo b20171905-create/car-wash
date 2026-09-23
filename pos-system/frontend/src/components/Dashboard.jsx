@@ -38,6 +38,8 @@ export default function Dashboard({ user }) {
   const [selectedMonthSales, setSelectedMonthSales] = useState([]);
   const [selectedHourlyDate, setSelectedHourlyDate] = useState(formatPkDateKey(new Date()));
   const [hourlySalesData, setHourlySalesData] = useState([]);
+  const [selectedPieDate, setSelectedPieDate] = useState(formatPkDateKey(new Date()));
+  const [pieSummary, setPieSummary] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,13 +101,17 @@ export default function Dashboard({ user }) {
     return () => window.clearInterval(refreshTimer);
   }, [selectedHourlyDate]);
 
+  useEffect(() => {
+    api.getSummary(selectedPieDate).then(setPieSummary).catch(() => setPieSummary([]));
+  }, [selectedPieDate]);
+
   const totalRevenue = summary.reduce((s, b) => s + Number(b.revenue), 0);
   const totalToday = summary.reduce((s, b) => s + Number(b.today_revenue), 0);
   const totalSales = summary.reduce((s, b) => s + Number(b.sale_count), 0);
   const todaySales = summary.reduce((s, b) => s + Number(b.today_count || 0), 0);
   const topBranch = summary.reduce((best, branch) => Number(branch.revenue) > Number(best?.revenue || 0) ? branch : best, summary[0] || { branch_name: 'N/A', revenue: 0 });
   const bestDay = weeklySales.reduce((best, day) => Number(day.revenue) > Number(best?.revenue || 0) ? day : best, weeklySales[0] || { label: 'N/A', revenue: 0 });
-  const dailyBranchSales = summary.map((branch, index) => ({
+  const dailyBranchSales = pieSummary.map((branch, index) => ({
     ...branch,
     dailyRevenue: Number(branch.today_revenue || 0),
     color: CHART_COLORS[index % CHART_COLORS.length],
@@ -121,8 +127,8 @@ export default function Dashboard({ user }) {
   ];
   const dailyVehicleSales = vehicleOptions.map((vehicle) => ({
     ...vehicle,
-    dailyRevenue: summary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_revenue`] || 0), 0),
-    count: summary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
+    dailyRevenue: pieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_revenue`] || 0), 0),
+    count: pieSummary.reduce((total, branch) => total + Number(branch[`today_${vehicle.id}_count`] || 0), 0),
   }));
   const dailyVehicleRevenueTotal = dailyVehicleSales.reduce((total, vehicle) => total + vehicle.dailyRevenue, 0);
   const paymentOptions = [
@@ -130,15 +136,11 @@ export default function Dashboard({ user }) {
     { id: 'card', label: 'Card', color: '#2563eb' },
     { id: 'upi', label: 'Bank Transfer', color: '#d97706' },
   ];
-  const todayKey = formatPkDateKey(new Date());
   const dailyPaymentSales = paymentOptions.map((payment) => {
-    const paymentSales = recentSales.filter((sale) => (
-      formatPkDateKey(parseTimestamp(sale.created_at)) === todayKey && sale.payment_method === payment.id
-    ));
     return {
       ...payment,
-      dailyRevenue: paymentSales.reduce((total, sale) => total + Number(sale.total || 0), 0),
-      count: paymentSales.length,
+      dailyRevenue: pieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_revenue`] || 0), 0),
+      count: pieSummary.reduce((total, branch) => total + Number(branch[`today_${payment.id}_count`] || 0), 0),
     };
   });
   const dailyPaymentRevenueTotal = dailyPaymentSales.reduce((total, payment) => total + payment.dailyRevenue, 0);
@@ -294,13 +296,17 @@ export default function Dashboard({ user }) {
           </div>
         </div>
         <div className="daily-pie-charts">
+          <div className="form-group" style={{ maxWidth: 220, marginBottom: 18 }}>
+            <label className="form-label" htmlFor="pie-sales-date">Calendar date</label>
+            <input id="pie-sales-date" className="form-input" type="date" value={selectedPieDate} onChange={(event) => setSelectedPieDate(event.target.value)} />
+          </div>
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Branch</h3>
-              <p>Today&apos;s revenue share across all branches</p>
+              <p>Revenue share across all branches for {selectedPieDate}</p>
             </div>
             {dailyRevenueTotal === 0 ? (
-              <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-title">No sales today</div></div>
+              <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-title">No sales for this date</div></div>
             ) : (
               <div className="daily-pie-layout">
                 <div className="daily-pie-chart" style={{ background: `conic-gradient(${pieStops(dailyBranchSales, dailyRevenueTotal).join(', ')})` }} aria-label={`Daily branch sales total ${PKR(dailyRevenueTotal)}`} />
@@ -319,10 +325,10 @@ export default function Dashboard({ user }) {
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Vehicle Type</h3>
-              <p>Today&apos;s revenue across all billed vehicle types</p>
+              <p>Revenue across all billed vehicle types for {selectedPieDate}</p>
             </div>
             {dailyVehicleRevenueTotal === 0 ? (
-              <div className="empty-state"><div className="empty-icon">🚗</div><div className="empty-title">No vehicle sales today</div></div>
+              <div className="empty-state"><div className="empty-icon">🚗</div><div className="empty-title">No vehicle sales for this date</div></div>
             ) : (
               <div className="daily-pie-layout">
                 <div className="daily-pie-chart" style={{ background: `conic-gradient(${pieStops(dailyVehicleSales, dailyVehicleRevenueTotal).join(', ')})` }} aria-label={`Daily vehicle sales total ${PKR(dailyVehicleRevenueTotal)}`} />
@@ -341,10 +347,10 @@ export default function Dashboard({ user }) {
           <section className="daily-pie-section">
             <div style={{ marginBottom: 14 }}>
               <h3>Daily Sales by Payment</h3>
-              <p>Today&apos;s revenue grouped by payment method</p>
+              <p>Revenue grouped by payment method for {selectedPieDate}</p>
             </div>
             {dailyPaymentRevenueTotal === 0 ? (
-              <div className="empty-state"><div className="empty-icon">💳</div><div className="empty-title">No payment sales today</div></div>
+              <div className="empty-state"><div className="empty-icon">💳</div><div className="empty-title">No payment sales for this date</div></div>
             ) : (
               <div className="daily-pie-layout">
                 <div className="daily-pie-chart" style={{ background: `conic-gradient(${pieStops(dailyPaymentSales, dailyPaymentRevenueTotal).join(', ')})` }} aria-label={`Daily payment sales total ${PKR(dailyPaymentRevenueTotal)}`} />
