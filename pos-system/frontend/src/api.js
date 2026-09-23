@@ -121,7 +121,11 @@ export const api = {
 
   deleteSale: (id) => request(`/sales/${id}`, { method: 'DELETE' }),
 
-  getSummary: (date) => request(`/sales/summary${date ? `?date=${encodeURIComponent(date)}` : ''}`),
+  getSummary: (dateOrParams) => {
+    const params = typeof dateOrParams === 'string' ? { date: dateOrParams } : (dateOrParams || {});
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value)).toString();
+    return request(`/sales/summary${query ? `?${query}` : ''}`);
+  },
 
   getHourlySummary: (date) => request(`/sales/hourly-summary?date=${encodeURIComponent(date)}`),
 

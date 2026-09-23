@@ -289,7 +289,13 @@ router.get('/hourly-summary', requireBranchManager, async (req, res, next) => {
 router.get('/summary', requireBranchManager, async (req, res, next) => {
   try {
   const branchId = scopeBranchId(req);
-  const bounds = req.query.date ? getPakistanDayBoundsForDate(req.query.date) : getPakistanDayBounds();
+  const hasRange = req.query.from || req.query.to;
+  if (hasRange && (!/^\d{4}-\d{2}-\d{2}$/.test(req.query.from || '') || !/^\d{4}-\d{2}-\d{2}$/.test(req.query.to || '') || req.query.from > req.query.to)) {
+    return res.status(400).json({ error: 'from and to must use YYYY-MM-DD format and from cannot be after to' });
+  }
+  const bounds = hasRange
+    ? { start: getPakistanDayBoundsForDate(req.query.from).start, end: getPakistanDayBoundsForDate(req.query.to).end }
+    : req.query.date ? getPakistanDayBoundsForDate(req.query.date) : getPakistanDayBounds();
   if (!bounds) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
   const { start, end } = bounds;
 

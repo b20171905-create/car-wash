@@ -33,11 +33,16 @@ router.get('/', requireBranchManager, async (req, res, next) => {
   try {
     await ensureTable();
     const expenseDate = req.query.date || '';
+    const from = req.query.from || '';
+    const to = req.query.to || '';
     if (expenseDate && !/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) return res.status(400).json({ error: 'date must use YYYY-MM-DD format' });
+    if ((from || to) && (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to)) return res.status(400).json({ error: 'from and to must use YYYY-MM-DD format and from cannot be after to' });
+    if (expenseDate && (from || to)) return res.status(400).json({ error: 'use either date or from/to' });
     const params = [];
     const filter = branchFilter(req, params);
-    const dateFilter = expenseDate ? ' WHERE e.expense_date = ?' : ' WHERE 1 = 1';
+    const dateFilter = expenseDate ? ' WHERE e.expense_date = ?' : from ? ' WHERE e.expense_date >= ? AND e.expense_date <= ?' : ' WHERE 1 = 1';
     if (expenseDate) params.unshift(expenseDate);
+    if (from) params.unshift(from, to);
     const rows = await db.prepare(`SELECT e.*, b.name AS branch_name, u.name AS created_by
       FROM expenses e JOIN branches b ON b.id = e.branch_id JOIN users u ON u.id = e.user_id
       ${dateFilter}${filter} ORDER BY e.created_at DESC`).all(...params);

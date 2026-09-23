@@ -235,6 +235,10 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 .cash-collection-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
 .cash-collection-date { min-width: 190px; margin: 0; }
+.cash-collection-filters { display: flex; align-items: flex-end; gap: 12px; }
+.cash-collection-mode { display: flex; gap: 4px; padding-bottom: 1px; }
+.cash-collection-range { display: flex; gap: 10px; }
+.cash-collection-range .form-group { min-width: 150px; margin: 0; }
 .cash-collection-hero { margin-top: 16px; padding: 28px; border: 1px solid var(--border-active); border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(13, 27, 34, 0.95)); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .cash-collection-hero span { color: var(--text-muted); font-size: 0.95rem; }
 .cash-collection-hero strong { color: var(--teal-light); font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1; }
@@ -250,7 +254,8 @@ p { color: var(--text-muted); font-size: clamp(0.8rem, 2vw, 0.9rem); }
 
 @media (max-width: 760px) {
   .cash-collection-toolbar, .cash-collection-hero { align-items: stretch; flex-direction: column; }
-  .cash-collection-date { width: 100%; }
+  .cash-collection-filters, .cash-collection-range { width: 100%; flex-direction: column; align-items: stretch; }
+  .cash-collection-date, .cash-collection-range .form-group { width: 100%; }
   .cash-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
