@@ -12,6 +12,7 @@ const whatsapp = require('../services/whatsapp');
 const printService = require('../services/print');
 const emailService = require('../services/email');
 const receiptSettings = require('../services/receiptSettings');
+const { nextReceiptNumber } = require('../services/receiptNumber');
 
 const router = express.Router();
 // All /api/sales routes require a valid JWT
@@ -38,25 +39,6 @@ function getPakistanDayBounds(now = new Date()) {
 function getPakistanDayBoundsForDate(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null;
   return getPakistanDayBounds(new Date(`${date}T12:00:00+05:00`));
-}
-
-async function nextReceiptNumber() {
-  const dbType = (process.env.DB_CLIENT || '').toLowerCase();
-  const isMysql = dbType === 'mysql' || (process.env.DATABASE_URL || '').startsWith('mysql');
-
-  if (isMysql) {
-    const result = await db.query("SELECT LPAD(COALESCE(MAX(CAST(receipt_number AS UNSIGNED)), 0) + 1, 3, '0') AS receipt_number FROM sales");
-    if (!result.rows || !result.rows[0]) {
-      throw new Error('Failed to generate receipt number');
-    }
-    return result.rows[0].receipt_number;
-  }
-
-  const result = await db.query("SELECT LPAD(nextval('receipt_number_seq')::text, 3, '0') AS receipt_number");
-  if (!result.rows || !result.rows[0]) {
-    throw new Error('Failed to generate receipt number');
-  }
-  return result.rows[0].receipt_number;
 }
 
 // Create a sale (checkout) — open to cashier and above
